@@ -2,9 +2,16 @@
  * One-time migration of persisted state from the pre-rename ("QA Copilot") keys.
  *
  * The project was renamed to Drafter, which changed every storage identifier.
- * Without this migration an existing install would silently lose its settings
- * and its whole SQLite database. Migration runs once, is fully best-effort and
- * never blocks or breaks app startup.
+ * Without this migration an existing install would silently lose its settings,
+ * API key and its whole SQLite database.
+ *
+ * The migration is strictly additive and never destructive:
+ * - it only writes a target value when the target does not exist yet
+ * - it never creates a database that did not already exist
+ * - when the target database has to be created, it is created with its object
+ *   store, because opening a database at its current version does NOT fire
+ *   `onupgradeneeded` and would otherwise leave a store-less database behind
+ * - it is fully best-effort and never blocks or breaks app startup
  *
  * @module legacyMigration
  * @author ssrjkk
@@ -42,24 +49,81 @@ export function migrateLocalStorageKeys(): number {
       // Storage unavailable or full — skip this key, keep going.
     }
   }
+
+  // Backups are stored as `<prefix><id>`. Move those entries too, otherwise the
+  // copied index would reference backups that no longer exist.
+  const legacyPrefix = LEGACY_STORAGE_KEYS.backupPrefix;
+  if (legacyPrefix) {
+    try {
+      const currentPrefix = STORAGE_KEYS.backupPrefix;
+      const pending: Array<[string, string]> = [];
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith(legacyPrefix)) continue;
+        const currentKey = currentPrefix + key.slice(legacyPrefix.length);
+        if (localStorage.getItem(currentKey) !== null) continue;
+        const value = localStorage.getItem(key);
+        if (value !== null) pending.push([currentKey, value]);
+      }
+      for (const [key, value] of pending) {
+        localStorage.setItem(key, value);
+        migrated += 1;
+      }
+    } catch {
+      // Best effort.
+    }
+  }
+
   return migrated;
 }
 
-function openDatabase(name: string, version: number): Promise<IDBDatabase | null> {
+/**
+ * Open a database and report whether it had to be created.
+ *
+ * Opening without an explicit version lets us detect a pre-existing database
+ * through `onupgradeneeded`: it only fires when the database did not exist. A
+ * database we just created by accident is deleted again, so the migration never
+ * leaves empty databases behind. `createStore` is applied only at creation
+ * time, which is the sole moment a schema can be defined without bumping the
+ * version.
+ */
+function openDatabase(
+  name: string,
+  createStore?: string,
+): Promise<{ db: IDBDatabase; created: boolean } | null> {
   return new Promise((resolve) => {
     let request: IDBOpenDBRequest;
+    let created = false;
     try {
-      request = indexedDB.open(name, version);
+      request = indexedDB.open(name);
     } catch {
       resolve(null);
       return;
     }
-    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = () => {
+      created = true;
+      if (!createStore) return;
+      const db = request.result;
+      if (!db.objectStoreNames.contains(createStore)) {
+        db.createObjectStore(createStore);
+      }
+    };
+
+    request.onsuccess = () => resolve({ db: request.result, created });
     request.onerror = () => resolve(null);
     request.onblocked = () => resolve(null);
-    // Never create stores on the legacy database: a missing store is how we
-    // detect that the legacy database never existed in the first place.
   });
+}
+
+/** Close and remove a database that the migration created by accident. */
+function discardDatabase(db: IDBDatabase, name: string): void {
+  db.close();
+  try {
+    indexedDB.deleteDatabase(name);
+  } catch {
+    // Best effort.
+  }
 }
 
 function readAll(db: IDBDatabase, store: string): Promise<Array<[IDBValidKey, unknown]>> {
@@ -92,29 +156,37 @@ function writeAll(db: IDBDatabase, store: string, entries: Array<[IDBValidKey, u
 
 /** Copy a legacy IndexedDB database into its renamed counterpart. */
 async function migrateDatabase({ legacy, current, store }: LegacyDatabase): Promise<boolean> {
-  const legacyDb = await openDatabase(legacy, 1);
-  if (!legacyDb) return false;
+  const legacyResult = await openDatabase(legacy);
+  if (!legacyResult) return false;
+
+  if (legacyResult.created) {
+    // The legacy database never existed, so there is nothing to migrate.
+    discardDatabase(legacyResult.db, legacy);
+    return false;
+  }
 
   try {
-    if (!legacyDb.objectStoreNames.contains(store)) return false;
+    if (!legacyResult.db.objectStoreNames.contains(store)) return false;
 
-    const entries = await readAll(legacyDb, store);
+    const entries = await readAll(legacyResult.db, store);
     if (entries.length === 0) return false;
 
-    const currentDb = await openDatabase(current, 1);
-    if (!currentDb) return false;
+    const currentResult = await openDatabase(current, store);
+    if (!currentResult) return false;
 
     try {
-      if (!currentDb.objectStoreNames.contains(store)) return false;
-      const existing = await readAll(currentDb, store);
-      if (existing.length > 0) return false;
-      await writeAll(currentDb, store, entries);
+      if (!currentResult.db.objectStoreNames.contains(store)) return false;
+      // Never overwrite data the renamed database already holds.
+      if (!currentResult.created && (await readAll(currentResult.db, store)).length > 0) {
+        return false;
+      }
+      await writeAll(currentResult.db, store, entries);
       return true;
     } finally {
-      currentDb.close();
+      currentResult.db.close();
     }
   } finally {
-    legacyDb.close();
+    legacyResult.db.close();
   }
 }
 
@@ -134,6 +206,7 @@ export async function migrateLegacyStorage(): Promise<void> {
   try {
     migrateLocalStorageKeys();
 
+    // Without IndexedDB there is no legacy database to move.
     if (typeof indexedDB !== 'undefined') {
       for (const database of LEGACY_DATABASES) {
         await migrateDatabase(database);

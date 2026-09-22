@@ -7,7 +7,7 @@
 **Генерация тест-планов, анализ кода, написание баг-репортов — на базе 9 AI-провайдеров.**
 
 [![CI](https://github.com/ssrjkk/drafter/actions/workflows/ci.yml/badge.svg)](https://github.com/ssrjkk/drafter/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-600%20passed-22c55e)](#тестирование)
+[![Tests](https://img.shields.io/badge/tests-607%20passed-22c55e)](#тестирование)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](#технологический-стек)
 
@@ -154,7 +154,7 @@ npm run preview   # предпросмотр локально
 
 ### Developer Experience
 
-- **600 тестов** в 47 файлах (unit, integration, property-based)
+- **607 тестов** в 48 файлах (unit, integration, property-based)
 - **49 E2E тестов** в 12 spec-файлах (Playwright)
 - **Lighthouse CI** в GitHub Actions
 - Pre-commit хуки (eslint, lint-staged)
@@ -239,7 +239,7 @@ src/
 ## Тестирование
 
 ```bash
-npm run test          # 600 unit/integration тестов в 47 файлах
+npm run test          # 607 unit/integration тестов в 48 файлах
 npm run test:watch    # Watch mode
 npm run test:e2e      # 49 Playwright E2E тестов в 12 spec-файлах
 ```

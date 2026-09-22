@@ -7,7 +7,7 @@
 **Generate test plans, analyze code, write bug reports — powered by 9 AI providers.**
 
 [![CI](https://github.com/ssrjkk/drafter/actions/workflows/ci.yml/badge.svg)](https://github.com/ssrjkk/drafter/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-600%20passed-22c55e)](#testing)
+[![Tests](https://img.shields.io/badge/tests-607%20passed-22c55e)](#testing)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](#tech-stack)
 
@@ -154,7 +154,7 @@ npm run preview   # preview locally
 
 ### Developer Experience
 
-- **600 tests** in 47 files (unit, integration, property-based)
+- **607 tests** in 48 files (unit, integration, property-based)
 - **49 E2E tests** in 12 spec files (Playwright)
 - **Lighthouse CI** in GitHub Actions
 - Pre-commit hooks (eslint, lint-staged)
@@ -239,7 +239,7 @@ The copy shortcut is deliberately `Ctrl + Shift + C` rather than plain `Ctrl + C
 ## Testing
 
 ```bash
-npm run test          # 600 unit/integration tests in 47 files
+npm run test          # 607 unit/integration tests in 48 files
 npm run test:watch    # Watch mode
 npm run test:e2e      # 49 Playwright E2E tests in 12 spec files
 ```
