@@ -60,6 +60,13 @@ export const ChatArea = memo(function ChatArea({
     (context.trim() || selectedTask === 'screenshot_analysis') &&
     apiKeyValid;
 
+  const hints = [
+    t('chat.hintLogin'),
+    t('chat.hintRestApi'),
+    t('chat.hintNavbar'),
+    t('chat.hintCheckout'),
+  ];
+
   return (
     <div className="space-y-6">
       <GlassCard className="p-6">
@@ -74,7 +81,7 @@ export const ChatArea = memo(function ChatArea({
           placeholder={t('chat.placeholder')}
           maxLength={maxContextLength}
           className="min-h-32"
-          aria-label="Task description input"
+          aria-label={t('chat.taskInputLabel')}
         />
         {contextError && (
           <p className="text-amber-400 text-xs mt-2 animate-slideUp">
@@ -83,13 +90,8 @@ export const ChatArea = memo(function ChatArea({
         )}
         {!context && selectedTask && !loading && (
           <div className="mt-3 flex flex-wrap gap-2">
-            <span className="text-xs text-gray-500">Try:</span>
-            {[
-              'Login form with email validation and OAuth',
-              'REST API /users endpoint with pagination',
-              'Mobile responsive navbar with hamburger menu',
-              'Payment checkout flow with Stripe integration',
-            ].map(hint => (
+            <span className="text-xs text-gray-500">{t('chat.tryLabel')}</span>
+            {hints.map(hint => (
               <button
                 key={hint}
                 onClick={() => onContextChange(hint)}
@@ -120,7 +122,7 @@ export const ChatArea = memo(function ChatArea({
           <div className="flex items-start gap-3">
             <span className="text-lg">⚠️</span>
             <div>
-              <p className="font-medium">Error</p>
+              <p className="font-medium">{t('chat.errorTitle')}</p>
               <p className="mt-1 opacity-80">{error}</p>
             </div>
           </div>
@@ -154,9 +156,9 @@ export const ChatArea = memo(function ChatArea({
       <div className="flex justify-center">
         <button
           onClick={() => setShowMetrics(!showMetrics)}
-          className="text-xs text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1"
+          className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex items-center gap-1"
         >
-          📊 {showMetrics ? 'Hide Metrics' : 'Show Metrics'}
+          📊 {showMetrics ? t('chat.hideMetrics') : t('chat.showMetrics')}
         </button>
       </div>
 

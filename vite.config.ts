@@ -4,6 +4,9 @@ import path from 'path'
 import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig(({ mode }) => ({
+  // Overridable so the same build works for root-served deploys (Docker, self-host)
+  // and for GitHub Pages project sites, which are served from /<repo>/.
+  base: process.env.VITE_BASE ?? '/',
   plugins: [
     react(),
     ...(mode === 'analyze' ? [visualizer({

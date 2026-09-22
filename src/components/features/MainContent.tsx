@@ -39,6 +39,7 @@ interface MainContentProps {
   codebaseProvider?: CodebaseProvider | null;
   onCodebaseConnect?: (provider: CodebaseProvider) => void;
   onCodebaseDisconnect?: () => void;
+  onScreenshotChange: (base64: string | null) => void;
 }
 
 export const MainContent = memo(function MainContent({
@@ -67,6 +68,7 @@ export const MainContent = memo(function MainContent({
   codebaseProvider,
   onCodebaseConnect,
   onCodebaseDisconnect,
+  onScreenshotChange,
 }: MainContentProps) {
   const [activeTab, setActiveTab] = useState<TabType>('new');
 
@@ -90,7 +92,7 @@ export const MainContent = memo(function MainContent({
             maxContextLength={maxContextLength}
             onError={onContextError}
             error={error}
-            onScreenshotChange={() => {}}
+            onScreenshotChange={onScreenshotChange}
           />
         </LazySuspense>
 

@@ -18,9 +18,9 @@ vi.mock('../lib/keyManagement', () => ({
 }));
 
 const KEYS = {
-  syncStatus: 'qa-helper-sync-status',
-  syncConfig: 'qa-helper-sync-config',
-  syncBackup: 'qa-helper-sync-backup-data',
+  syncStatus: 'drafter-sync-status',
+  syncConfig: 'drafter-sync-config',
+  syncBackup: 'drafter-sync-backup-data',
 } as const;
 
 describe('CloudSyncService', () => {

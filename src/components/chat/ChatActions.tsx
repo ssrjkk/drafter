@@ -40,7 +40,7 @@ export function ChatActions({
             <span className="flex items-center justify-center gap-3">
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               <span className="flex items-center">
-                Generating<LoadingIndicator />
+                {t('chat.generatingButton')}<LoadingIndicator />
               </span>
             </span>
           ) : (
@@ -51,14 +51,14 @@ export function ChatActions({
         </RippleButton>
         {(hasOutput || loading) && (
           <RippleButton onClick={onReset} variant="secondary">
-            ↺ Reset
+            ↺ {t('chat.reset')}
           </RippleButton>
         )}
       </div>
 
       {!apiKeyValid && !loading && (
         <p className="text-xs text-center text-gray-500">
-          Set an API key in the sidebar to start generating
+          {t('chat.apiKeyHint')}
         </p>
       )}
     </>

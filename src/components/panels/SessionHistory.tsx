@@ -11,6 +11,7 @@ import { TASK_TYPES } from '../../config';
 import type { TaskType } from '../../config';
 import type { Session } from '../../domain/entities/Session';
 import { Collapse } from '../ui/Transitions';
+import { t } from '../../lib/i18n';
 
 interface SessionHistoryProps {
   sessions: Session[];
@@ -35,10 +36,10 @@ export const SessionHistory = memo(function SessionHistory({ sessions, onLoadSes
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return t('history.justNow');
+    if (diffMins < 60) return t('history.minutesAgo', { count: String(diffMins) });
+    if (diffHours < 24) return t('history.hoursAgo', { count: String(diffHours) });
+    if (diffDays < 7) return t('history.daysAgo', { count: String(diffDays) });
     return date.toLocaleDateString();
   };
 
@@ -78,8 +79,8 @@ export const SessionHistory = memo(function SessionHistory({ sessions, onLoadSes
       <GlassCard className="p-6">
         <div className="text-center py-8">
           <div className="text-4xl mb-4">📭</div>
-          <h3 className="text-lg font-medium text-gray-300 mb-2">No History Yet</h3>
-          <p className="text-sm text-gray-500">Your generated outputs will appear here</p>
+          <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">{t('history.emptyTitle')}</h3>
+          <p className="text-sm text-gray-500">{t('history.emptyDescription')}</p>
         </div>
       </GlassCard>
     );
@@ -89,19 +90,19 @@ export const SessionHistory = memo(function SessionHistory({ sessions, onLoadSes
     <GlassCard className="p-4">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
             <span>📜</span>
-            <span>Session History</span>
+            <span>{t('history.title')}</span>
             <span className="text-xs text-gray-500">({filteredSessions.length})</span>
           </h3>
           <div className="flex items-center gap-2">
             {onClearHistory && (
               <button
                 onClick={onClearHistory}
-                aria-label="Clear all history"
+                aria-label={t('history.clearAllLabel')}
                 className="px-2 py-1 text-xs text-gray-500 hover:text-red-400 transition-colors"
               >
-                Clear All
+                {t('history.clearAll')}
               </button>
             )}
           </div>
@@ -110,11 +111,11 @@ export const SessionHistory = memo(function SessionHistory({ sessions, onLoadSes
         <div className="relative">
           <input
             type="text"
-            placeholder="Search history..."
-            aria-label="Search history"
+            placeholder={t('history.searchPlaceholder')}
+            aria-label={t('history.searchLabel')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 pl-10 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 focus:border-indigo-500/50 transition-all"
+            className="w-full px-4 py-2 pl-10 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-800 dark:text-gray-200 placeholder-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 focus:border-indigo-500/50 transition-all"
           />
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
         </div>
@@ -148,7 +149,7 @@ export const SessionHistory = memo(function SessionHistory({ sessions, onLoadSes
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
-                  <div className="bg-white/5 border border-white/10 rounded-lg overflow-hidden hover:border-white/20 transition-colors">
+                  <div className="bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden hover:border-gray-300 dark:hover:border-white/20 transition-colors">
                     <div
                       className="p-3 cursor-pointer"
                       role="button"
@@ -171,7 +172,7 @@ export const SessionHistory = memo(function SessionHistory({ sessions, onLoadSes
                               {taskInfo.icon}
                             </span>
                           )}
-                          <span className="text-sm font-medium text-gray-200">
+                          <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
                             {taskInfo?.label || session.task_type}
                           </span>
                         </div>
@@ -185,24 +186,24 @@ export const SessionHistory = memo(function SessionHistory({ sessions, onLoadSes
                         </div>
                       </div>
 
-                      <p className="text-xs text-gray-400 line-clamp-2">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
                         {truncate(session.context, 100)}
                       </p>
                     </div>
 
                     <Collapse show={isExpanded}>
-                      <div className="border-t border-white/5">
+                      <div className="border-t border-gray-200 dark:border-white/5">
                         <div className="p-3 space-y-3">
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Context:</p>
-                            <p className="text-xs text-gray-300 bg-white/5 rounded p-2 max-h-24 overflow-y-auto">
+                            <p className="text-xs text-gray-500 mb-1">{t('history.context')}</p>
+                            <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 rounded p-2 max-h-24 overflow-y-auto">
                               {session.context}
                             </p>
                           </div>
 
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Output:</p>
-                            <p className="text-xs text-gray-300 bg-white/5 rounded p-2 max-h-32 overflow-y-auto">
+                            <p className="text-xs text-gray-500 mb-1">{t('history.output')}</p>
+                            <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 rounded p-2 max-h-32 overflow-y-auto">
                               {truncate(session.output, 500)}
                             </p>
                           </div>
@@ -213,9 +214,9 @@ export const SessionHistory = memo(function SessionHistory({ sessions, onLoadSes
                                 e.stopPropagation();
                                 onLoadSession(session);
                               }}
-                              className="flex-1 px-3 py-2 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs rounded-lg hover:bg-indigo-500/30 transition-colors"
+                              className="flex-1 px-3 py-2 bg-indigo-500/20 border border-indigo-500/30 text-indigo-600 dark:text-indigo-300 text-xs rounded-lg hover:bg-indigo-500/30 transition-colors"
                             >
-                              Load Session
+                              {t('history.loadSession')}
                             </button>
                           </div>
                         </div>
@@ -229,7 +230,7 @@ export const SessionHistory = memo(function SessionHistory({ sessions, onLoadSes
 
           {filteredSessions.length === 0 && searchQuery && (
             <div className="text-center py-6 text-gray-500 text-sm">
-              No results for "{searchQuery}"
+              {t('history.noResults', { query: searchQuery })}
             </div>
           )}
         </div>

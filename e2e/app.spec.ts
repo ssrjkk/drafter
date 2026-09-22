@@ -1,6 +1,6 @@
 import { test, expect, unlockApp } from './setup';
 
-test.describe('QA Copilot', () => {
+test.describe('Drafter', () => {
   test('loads the application', async ({ page }) => {
     await page.goto('/');
     await unlockApp(page);

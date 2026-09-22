@@ -8,6 +8,7 @@ import { useState, useRef, useEffect, useMemo, memo } from 'react';
 import type { KeyboardEvent } from 'react';
 import { CONTEXT_PRESETS, searchPresets, type ContextPreset } from '../../config';
 import { Input } from '../ui';
+import { t } from '../../lib/i18n';
 
 interface ContextPresetsProps {
   onSelect: (template: string) => void;
@@ -41,11 +42,11 @@ export function ContextPresets({ onSelect, currentContext }: ContextPresetsProps
   };
 
   const categories = useMemo(() => [
-    { id: 'e2e', label: 'E2E', presets: filteredPresets.filter(p => p.tags.includes('e2e')) },
-    { id: 'unit', label: 'Unit', presets: filteredPresets.filter(p => p.tags.includes('unit')) },
-    { id: 'api', label: 'API', presets: filteredPresets.filter(p => p.tags.includes('api')) },
-    { id: 'mobile', label: 'Mobile', presets: filteredPresets.filter(p => p.tags.includes('mobile')) },
-    { id: 'other', label: 'Other', presets: filteredPresets.filter(p =>
+    { id: 'e2e', label: t('presets.categoryE2e'), presets: filteredPresets.filter(p => p.tags.includes('e2e')) },
+    { id: 'unit', label: t('presets.categoryUnit'), presets: filteredPresets.filter(p => p.tags.includes('unit')) },
+    { id: 'api', label: t('presets.categoryApi'), presets: filteredPresets.filter(p => p.tags.includes('api')) },
+    { id: 'mobile', label: t('presets.categoryMobile'), presets: filteredPresets.filter(p => p.tags.includes('mobile')) },
+    { id: 'other', label: t('presets.categoryOther'), presets: filteredPresets.filter(p =>
       !p.tags.includes('e2e') && !p.tags.includes('unit') && !p.tags.includes('api') && !p.tags.includes('mobile')
     ) },
   ], [filteredPresets]);
@@ -57,10 +58,10 @@ export function ContextPresets({ onSelect, currentContext }: ContextPresetsProps
         onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Escape') setIsOpen(false); if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsOpen(!isOpen); } }}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
-        className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300 hover:bg-white/10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 transition-all duration-200"
+        className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 transition-all duration-200"
       >
         <span>⚡</span>
-        <span>Presets</span>
+        <span>{t('presets.button')}</span>
         <span className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
       </button>
 
@@ -68,14 +69,14 @@ export function ContextPresets({ onSelect, currentContext }: ContextPresetsProps
         <div
           onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Escape') setIsOpen(false); }}
           role="menu"
-          className="absolute left-0 top-full mt-2 z-50 w-80 bg-slate-800 border border-white/10 rounded-xl shadow-xl overflow-hidden animate-fadeIn"
+          className="absolute left-0 top-full mt-2 z-50 w-80 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-fadeIn"
         >
-          <div className="p-3 border-b border-white/10">
+          <div className="p-3 border-b border-gray-200 dark:border-white/10">
             <Input
-              placeholder="Search presets..."
+              placeholder={t('presets.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              aria-label="Search presets"
+              aria-label={t('presets.searchLabel')}
               autoFocus
             />
           </div>
@@ -83,7 +84,7 @@ export function ContextPresets({ onSelect, currentContext }: ContextPresetsProps
           <div className="max-h-80 overflow-y-auto p-2">
             {filteredPresets.length === 0 ? (
               <div className="text-center py-6 text-gray-500 text-sm">
-                No presets found
+                {t('presets.noResults')}
               </div>
             ) : (
               <div className="space-y-3">
@@ -117,17 +118,17 @@ const PresetItem = memo(function PresetItem({ preset, onSelect }: { preset: Cont
       onClick={onSelect}
       role="menuitem"
       aria-label={`${preset.name}: ${preset.description}`}
-      className="w-full flex items-start gap-3 p-3 rounded-lg text-left hover:bg-white/10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+      className="w-full flex items-start gap-3 p-3 rounded-lg text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
     >
       <span className="text-xl">{preset.icon}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-sm text-gray-200">{preset.name}</span>
+          <span className="font-medium text-sm text-gray-800 dark:text-gray-200">{preset.name}</span>
           <div className="flex gap-1">
             {preset.tags.slice(0, 2).map(tag => (
               <span
                 key={tag}
-                className="px-1.5 py-0.5 text-[10px] bg-white/5 rounded text-gray-500"
+                className="px-1.5 py-0.5 text-[10px] bg-gray-100 dark:bg-white/5 rounded text-gray-500"
               >
                 {tag}
               </span>

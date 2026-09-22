@@ -20,8 +20,10 @@ describe('Modal', () => {
 
   it('calls onClose on backdrop click', () => {
     const onClose = vi.fn();
-    render(<Modal isOpen={true} onClose={onClose} title="Test">Body</Modal>);
-    fireEvent.click(screen.getByRole('button', { name: 'Close modal' }));
+    const { container } = render(<Modal isOpen={true} onClose={onClose} title="Test">Body</Modal>);
+    const backdrop = container.querySelector('[data-testid="modal-backdrop"]');
+    expect(backdrop).not.toBeNull();
+    fireEvent.click(backdrop!);
     expect(onClose).toHaveBeenCalledOnce();
   });
 

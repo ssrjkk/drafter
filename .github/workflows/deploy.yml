@@ -28,6 +28,9 @@ jobs:
 
       - name: Build
         run: npx vite build
+        env:
+          # GitHub Pages project sites are served from /<repo>/
+          VITE_BASE: /drafter/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

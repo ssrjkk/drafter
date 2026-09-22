@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RateLimiter } from '../lib/rateLimiter';
 
-const LS_KEY = 'qa-rate-limit';
+const LS_KEY = 'drafter-rate-limit';
 
 describe('RateLimiter', () => {
   beforeEach(() => {

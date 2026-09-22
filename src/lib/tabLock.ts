@@ -4,7 +4,7 @@
  * @author ssrjkk
  */
 
-const CHANNEL_NAME = 'qa-copilot-lock';
+const CHANNEL_NAME = 'drafter-lock';
 const LOCK_TIMEOUT_MS = 5000;
 
 interface LockEntry {

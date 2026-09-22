@@ -99,11 +99,13 @@ export function useAppLifecycle() {
       }),
     );
 
-    // Ctrl+C: Copy output
+    // Ctrl+Shift+C: Copy output. Deliberately not plain Ctrl+C so the native
+    // copy of a text selection is never hijacked.
     unsubs.push(
       KeyboardShortcuts.register({
         key: 'c',
         ctrl: true,
+        shift: true,
         handler: () => {
           window.dispatchEvent(new CustomEvent('copy-output'));
         },

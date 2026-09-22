@@ -91,12 +91,9 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md' 
       leaveTo="opacity-0"
     >
       <div
+        data-testid="modal-backdrop"
         className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
         onClick={onClose}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(); }}
-        role="button"
-        aria-label="Close modal"
-        tabIndex={-1}
       >
         <div
           ref={contentRef}

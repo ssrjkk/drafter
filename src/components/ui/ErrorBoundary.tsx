@@ -30,7 +30,7 @@ interface CrashReport {
   userAgent: string;
 }
 
-const CRASH_DB_NAME = 'qa-copilot-crashes';
+const CRASH_DB_NAME = 'drafter-crashes';
 const CRASH_STORE_NAME = 'crash-reports';
 const DB_VERSION = 1;
 

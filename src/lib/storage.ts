@@ -8,7 +8,7 @@ import { arrayBufferToBase64, base64ToArrayBuffer } from './base64';
 import { ErrorService } from './errorService';
 import { ErrorCode, STORAGE_KEYS } from './constants';
 
-const DB_NAME = 'qa-helper-db';
+const DB_NAME = 'drafter-db';
 const DB_VERSION = 1;
 const STORE_NAME = 'database';
 const DB_KEY = 'app-state';
@@ -37,7 +37,7 @@ function generateIv(): Uint8Array {
 }
 
 async function deriveLsAesKey(passphrase: CryptoKey): Promise<CryptoKey> {
-  const salt = new TextEncoder().encode('qa-helper-ls-salt');
+  const salt = new TextEncoder().encode('drafter-ls-salt');
   return crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt, iterations: 100_000, hash: 'SHA-256' },
     passphrase,
@@ -235,20 +235,20 @@ export async function createStorageProvider(): Promise<StorageProvider> {
   }
 
   try {
-    const testDb = indexedDB.open('qa-helper-test', 1);
+    const testDb = indexedDB.open('drafter-test', 1);
     return new Promise((resolve) => {
       testDb.onsuccess = () => {
         const db = testDb.result;
         db.close();
-        indexedDB.deleteDatabase('qa-helper-test');
+        indexedDB.deleteDatabase('drafter-test');
         resolve(new IndexedDBStorage());
       };
       testDb.onerror = () => {
-        indexedDB.deleteDatabase('qa-helper-test');
+        indexedDB.deleteDatabase('drafter-test');
         resolve(new LocalStorageFallback());
       };
       testDb.onblocked = () => {
-        indexedDB.deleteDatabase('qa-helper-test');
+        indexedDB.deleteDatabase('drafter-test');
         resolve(new LocalStorageFallback());
       };
     });

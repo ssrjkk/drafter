@@ -1,7 +1,8 @@
 {
-  "name": "qa-copilot",
+  "name": "drafter",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "description": "Browser-based QA assistant that turns task descriptions into test plans, test cases, bug reports and more — powered by 9 AI providers.",
   "type": "module",
   "author": "ssrjkk <ray013lefe@gmail.com>",
   "license": "MIT",

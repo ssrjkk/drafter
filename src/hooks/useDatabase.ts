@@ -46,7 +46,7 @@ export function useDatabase() {
     const initDb = async () => {
       try {
         performance.mark('db:init:start');
-        const SQL = await initSqlJs({ locateFile: () => '/sql-wasm.wasm' });
+        const SQL = await initSqlJs({ locateFile: (file: string) => `${import.meta.env.BASE_URL}${file}` });
         const storage = await createStorageProvider();
 
         let database: Database;

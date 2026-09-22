@@ -12,14 +12,14 @@ export async function unlockApp(page: Page) {
     // script or a flaky network drop mid-load).
     await page.addInitScript(() => {
       try {
-        localStorage.setItem('qa-copilot-onboarding-seen', 'true');
+        localStorage.setItem('drafter-onboarding-seen', 'true');
       } catch {
         // Storage unavailable — the dismiss loop below still skips the wizard
       }
     }).catch(() => {});
     await page.evaluate(() => {
       try {
-        localStorage.setItem('qa-copilot-onboarding-seen', 'true');
+        localStorage.setItem('drafter-onboarding-seen', 'true');
       } catch {
         // Storage unavailable — the dismiss loop below still skips the wizard
       }
@@ -71,7 +71,7 @@ test.beforeEach(async ({ context }) => {
   // the modal from racing with test clicks. Runs before every navigation.
   await context.addInitScript(() => {
     try {
-      localStorage.setItem('qa-copilot-onboarding-seen', 'true');
+      localStorage.setItem('drafter-onboarding-seen', 'true');
     } catch {
       // Storage unavailable — unlockApp() fallback will skip the modal instead
     }

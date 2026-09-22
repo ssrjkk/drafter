@@ -4,14 +4,40 @@
  * @author ssrjkk
  */
 
-export const APP_NAME = 'QA Copilot';
+export const APP_NAME = 'Drafter';
 export const APP_AUTHOR = 'ssrjkk';
-export const APP_WEBSITE = 'https://qa-copilot.ssrjkk.dev';
+export const APP_WEBSITE = 'https://drafter.ssrjkk.dev';
+export const APP_REPOSITORY = 'https://github.com/ssrjkk/drafter';
 export const APP_FOOTER = `${APP_NAME} by ${APP_AUTHOR} | MIT License`;
 export const APP_HEADER_SUBTITLE = 'AI-Powered QA Assistant';
 export const APP_HEADER_BYLINE = `by ${APP_AUTHOR}`;
 
 export const STORAGE_KEYS = {
+  onboarding: 'drafter-onboarding-seen',
+  apiKey: 'drafter-api-key',
+  salt: 'drafter-salt',
+  rateLimit: 'drafter-rate-limit',
+  legacyKey: 'drafter-legacy-key',
+  theme: 'drafter-theme',
+  locale: 'drafter-locale',
+  metrics: 'drafter-metrics',
+  dbBackup: 'drafter-sync-backup',
+  dbUnsaved: 'drafter-unsaved',
+  lsPassphrase: 'drafter-ls-key',
+  syncStatus: 'drafter-sync-status',
+  syncConfig: 'drafter-sync-config',
+  syncBackup: 'drafter-sync-backup-data',
+  attempts: 'drafter-attempts',
+  backupIndex: 'drafter-backup-index',
+  backupPrefix: 'drafter-backup-',
+  migrated: 'drafter-migrated',
+} as const;
+
+/**
+ * Pre-rename storage keys. Used once by `migrateLegacyStorage` so existing
+ * installs keep their settings, API key and database after the rename.
+ */
+export const LEGACY_STORAGE_KEYS: Record<keyof typeof STORAGE_KEYS, string | null> = {
   onboarding: 'qa-copilot-onboarding-seen',
   apiKey: 'qa-api-key',
   salt: 'qa-helper-salt',
@@ -29,7 +55,8 @@ export const STORAGE_KEYS = {
   attempts: 'qa-helper-attempts',
   backupIndex: 'qa-helper-backup-index',
   backupPrefix: 'qa-helper-backup-',
-} as const;
+  migrated: null,
+};
 
 export const LIMITS = {
   maxSessions: 50,

@@ -8,6 +8,7 @@ import { memo, useState, useEffect, useMemo } from 'react';
 import { GlassCard } from '../ui/GlassCard';
 import { metricsCollector } from '../../lib/metrics';
 import { LIMITS } from '../../lib/constants';
+import { t, getLocale } from '../../lib/i18n';
 
 interface MetricsDashboardProps {
   onClose?: () => void;
@@ -45,20 +46,20 @@ export const MetricsDashboard = memo(function MetricsDashboard({ onClose }: Metr
       className="space-y-6 animate-fadeIn"
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Usage Metrics</h2>
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-white">{t('metrics.title')}</h2>
         <div className="flex gap-2">
           <button
             onClick={() => metricsCollector.reset()}
             className="px-3 py-1.5 text-xs bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
           >
-            Reset Stats
+            {t('metrics.resetStats')}
           </button>
           {onClose && (
             <button
               onClick={onClose}
               className="px-3 py-1.5 text-xs bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
             >
-              Close
+              {t('common.close')}
             </button>
           )}
         </div>
@@ -67,39 +68,39 @@ export const MetricsDashboard = memo(function MetricsDashboard({ onClose }: Metr
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <GlassCard className="p-4">
           <div className="text-2xl font-bold text-gray-800 dark:text-white">{metrics.totalRequests}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Total Requests</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('metrics.totalRequests')}</div>
         </GlassCard>
         
         <GlassCard className="p-4">
           <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{metrics.successfulRequests}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Successful</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('metrics.successful')}</div>
         </GlassCard>
         
         <GlassCard className="p-4">
           <div className="text-2xl font-bold text-red-600 dark:text-rose-400">{metrics.failedRequests}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Failed</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('metrics.failed')}</div>
         </GlassCard>
         
         <GlassCard className="p-4">
           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{successRate}%</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Success Rate</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('metrics.successRate')}</div>
         </GlassCard>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <GlassCard className="p-4">
           <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{metrics.totalTokens.toLocaleString()}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Total Tokens Used</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('metrics.totalTokens')}</div>
         </GlassCard>
         
         <GlassCard className="p-4">
           <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{metrics.averageResponseTime}ms</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Avg Response Time</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{t('metrics.avgResponseTime')}</div>
         </GlassCard>
       </div>
 
       <GlassCard className="p-4">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Requests (Last 7 Days)</h3>
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t('metrics.requestsLast7Days')}</h3>
         <div className="flex items-end gap-1 h-24">
           {last7Days.map((day, i) => (
             <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
@@ -110,7 +111,7 @@ export const MetricsDashboard = memo(function MetricsDashboard({ onClose }: Metr
                 />
               </div>
               <span className="text-[10px] text-gray-500">
-                {new Date(day.date).toLocaleDateString('en', { weekday: 'short' })}
+                {new Date(day.date).toLocaleDateString(getLocale(), { weekday: 'short' })}
               </span>
               <span className="text-[10px] text-gray-500 dark:text-gray-400">{day.count}</span>
             </div>
@@ -120,7 +121,7 @@ export const MetricsDashboard = memo(function MetricsDashboard({ onClose }: Metr
 
       {topTasks.length > 0 && (
         <GlassCard className="p-4">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Top Task Types</h3>
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t('metrics.topTaskTypes')}</h3>
           <div className="space-y-2">
             {topTasks.map((task, i) => (
               <div key={task.type} className="flex items-center gap-3">

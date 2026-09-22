@@ -8,6 +8,7 @@ import { useState, useEffect, memo, useMemo } from 'react';
 import { MEMORY_CATEGORIES, type MemoryCategory, type MemoryEntry } from '../../types/memory';
 import { entriesToMemory, getMemorySummary } from '../../lib/memory';
 import { GlassCard, Accordion, Input, Select } from '../ui';
+import { t } from '../../lib/i18n';
 
 interface StructuredMemoryProps {
   projectId: number;
@@ -52,21 +53,21 @@ export function StructuredMemory({ projectId, entries, onAddEntry, onDeleteEntry
   return (
     <Accordion
       icon="🧠"
-      title="Structured Memory"
+      title={t('memory.title')}
       subtitle={summary}
       badge={entries.length > 0 ? entries.length : undefined}
     >
       <GlassCard className="p-4 space-y-4">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by category">
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t('memory.filterLabel')}>
           <button
             onClick={() => setSelectedCategory(null)}
             className={`px-3 py-1.5 text-xs rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
               !selectedCategory
-                ? 'bg-indigo-500/30 text-indigo-300 border border-indigo-500/30'
-                : 'bg-white/5 text-gray-400 hover:text-gray-200'
+                ? 'bg-indigo-500/30 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30'
+                : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
           >
-            All ({entries.length})
+            {t('memory.all')} ({entries.length})
           </button>
           {MEMORY_CATEGORIES.map(cat => (
             <button
@@ -74,8 +75,8 @@ export function StructuredMemory({ projectId, entries, onAddEntry, onDeleteEntry
               onClick={() => setSelectedCategory(cat.id)}
               className={`px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
                 selectedCategory === cat.id
-                  ? 'bg-indigo-500/30 text-indigo-300 border border-indigo-500/30'
-                  : 'bg-white/5 text-gray-400 hover:text-gray-200'
+                  ? 'bg-indigo-500/30 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30'
+                  : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
               }`}
             >
               <span aria-hidden="true">{cat.icon}</span> {cat.label} ({groupedEntries[cat.id].length})
@@ -86,7 +87,7 @@ export function StructuredMemory({ projectId, entries, onAddEntry, onDeleteEntry
         <div className="space-y-2 max-h-60 overflow-y-auto">
           {filteredEntries.length === 0 ? (
             <p className="text-center text-gray-500 text-sm py-4">
-              No memory entries yet
+              {t('memory.empty')}
             </p>
           ) : (
             filteredEntries.map(entry => (
@@ -100,8 +101,8 @@ export function StructuredMemory({ projectId, entries, onAddEntry, onDeleteEntry
           )}
         </div>
 
-        <div className="border-t border-white/10 pt-4">
-          <p className="text-xs text-gray-500 mb-2">Add new entry:</p>
+        <div className="border-t border-gray-200 dark:border-white/10 pt-4">
+          <p className="text-xs text-gray-500 mb-2">{t('memory.addEntry')}</p>
           <div className="flex flex-wrap gap-2">
             <Select
               value={selectedCategory || ''}
@@ -109,9 +110,9 @@ export function StructuredMemory({ projectId, entries, onAddEntry, onDeleteEntry
                 const val = e.target.value;
                 if (MEMORY_CATEGORIES.some(c => c.id === val)) setSelectedCategory(val as MemoryCategory);
               }}
-              aria-label="Memory category"
+              aria-label={t('memory.category')}
             >
-              <option value="">Category...</option>
+              <option value="">{t('memory.categoryPlaceholder')}</option>
               {MEMORY_CATEGORIES.map(cat => (
                 <option key={cat.id} value={cat.id}>
                   {cat.icon} {cat.label}
@@ -121,23 +122,23 @@ export function StructuredMemory({ projectId, entries, onAddEntry, onDeleteEntry
             <Input
               value={newKey}
               onChange={e => setNewKey(e.target.value)}
-              placeholder="Key (optional)"
-              aria-label="Memory entry key"
+              placeholder={t('memory.key')}
+              aria-label={t('memory.keyLabel')}
               className="flex-1 min-w-24"
             />
             <Input
               value={newValue}
               onChange={e => setNewValue(e.target.value)}
-              placeholder="Value"
-              aria-label="Memory entry value"
+              placeholder={t('memory.value')}
+              aria-label={t('memory.valueLabel')}
               className="flex-[2] min-w-32"
             />
             <button
               onClick={handleAddEntry}
               disabled={!selectedCategory || !newValue.trim()}
-              className="px-4 py-2 bg-indigo-500/30 text-indigo-300 rounded-lg text-sm hover:bg-indigo-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+              className="px-4 py-2 bg-indigo-500/30 text-indigo-600 dark:text-indigo-300 rounded-lg text-sm hover:bg-indigo-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
             >
-              Add
+              {t('memory.add')}
             </button>
           </div>
         </div>
@@ -172,12 +173,12 @@ function MemoryEntryItemInner({
 
   return (
     <div
-      className="flex items-start gap-2 p-2 bg-white/5 rounded-lg group"
+      className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-white/5 rounded-lg group"
     >
       <span className="text-sm mt-0.5" aria-hidden="true">{category?.icon}</span>
       <div className="flex-1 min-w-0">
         {entry.key !== 'entry' && entry.key !== category?.id && (
-          <p className="text-xs text-indigo-400">{entry.key}</p>
+          <p className="text-xs text-indigo-600 dark:text-indigo-400">{entry.key}</p>
         )}
         {isEditing ? (
           <Input
@@ -185,13 +186,13 @@ function MemoryEntryItemInner({
             onChange={e => setEditValue(e.target.value)}
             onBlur={handleSave}
             onKeyDown={e => e.key === 'Enter' && handleSave()}
-            aria-label={`Edit value for ${entry.key}`}
+            aria-label={t('memory.editValue', { key: entry.key })}
             className="!px-2 !py-1 !bg-transparent !border-indigo-500/30"
             autoFocus
           />
         ) : (
           <p
-            className="text-sm text-gray-300 cursor-pointer hover:text-white"
+            className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:text-gray-900 dark:hover:text-white"
             onClick={() => setIsEditing(true)}
             role="button"
             tabIndex={0}
@@ -202,13 +203,13 @@ function MemoryEntryItemInner({
         )}
       </div>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <span className="text-[10px] text-gray-600">
+        <span className="text-[10px] text-gray-400 dark:text-gray-600">
           {Math.round(entry.confidence * 100)}%
         </span>
         <button
           onClick={onDelete}
           className="p-1 text-gray-500 hover:text-red-400 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
-          aria-label="Delete entry"
+          aria-label={t('memory.deleteEntry')}
         >
           ×
         </button>

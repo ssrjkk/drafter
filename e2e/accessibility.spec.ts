@@ -43,6 +43,6 @@ test.describe('Theme', () => {
     await page.waitForTimeout(1000);
 
     const html = await page.locator('html').evaluate(el => el.outerHTML);
-    expect(html).toContain('QA Copilot');
+    expect(html).toContain('Drafter');
   });
 });

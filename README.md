@@ -1,14 +1,13 @@
 <div align="center">
 
-# QA Copilot
+# Drafter
 
 ### AI-Powered QA Assistant
 
 **Generate test plans, analyze code, write bug reports — powered by 9 AI providers.**
 
-[![CI](https://github.com/ssrjkk/qa-helper/actions/workflows/ci.yml/badge.svg)](https://github.com/ssrjkk/qa-helper/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-160%20passed-22c55e)](#testing)
-[![Bundle](https://img.shields.io/bundlejs/size/@minified?gzip=true&label=bundle&color=6366f1)](#tech-stack)
+[![CI](https://github.com/ssrjkk/drafter/actions/workflows/ci.yml/badge.svg)](https://github.com/ssrjkk/drafter/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-600%20passed-22c55e)](#testing)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](#tech-stack)
 
@@ -20,7 +19,7 @@
 
 ---
 
-## What is QA Copilot?
+## What is Drafter?
 
 A browser-based QA assistant that turns your task descriptions into structured outputs — test plans, test cases, automation code, bug reports, security checks, and more. No server required. Runs entirely in your browser with SQLite (WebAssembly).
 
@@ -59,7 +58,14 @@ A browser-based QA assistant that turns your task descriptions into structured o
 
 ## About
 
-QA Copilot is a browser-based, zero-server QA assistant that generates professional QA artifacts from task descriptions. It connects to 9 AI providers (7 free), runs a tool-use agentic loop with codebase analysis, and stores everything locally via SQLite WASM. Built for QA engineers who need fast, structured outputs without leaving the browser.
+Drafter is a browser-based, zero-server QA assistant that generates professional QA artifacts from task descriptions. It connects to 9 AI providers (7 free), runs a tool-use agentic loop with codebase analysis, and stores everything locally via SQLite WASM. Built for QA engineers who need fast, structured outputs without leaving the browser.
+
+- **Website:** https://drafter.ssrjkk.dev
+- **Repository:** https://github.com/ssrjkk/drafter
+
+### Renamed from QA Copilot
+
+Drafter was previously published as **QA Copilot** (repository `ssrjkk/qa-helper`). The rename changed every storage identifier, so on first start after upgrading `src/lib/legacyMigration.ts` copies the old localStorage keys (`qa-copilot-*`, `qa-helper-*`) and the old IndexedDB databases (`qa-helper-db`, `qa-copilot-keys`) to their new `drafter-*` names, and `src/lib/keyManagement.ts` upgrades the old master-password verify token. Existing installs keep their data, API key and master password.
 
 ---
 
@@ -68,8 +74,8 @@ QA Copilot is a browser-based, zero-server QA assistant that generates professio
 **3 steps to your first QA output:**
 
 ```bash
-git clone https://github.com/ssrjkk/qa-helper.git
-cd qa-helper
+git clone https://github.com/ssrjkk/drafter.git
+cd drafter
 npm install && npm run dev
 ```
 
@@ -84,6 +90,8 @@ Open `http://localhost:5173`, enter your API key, pick a task type, describe you
 docker compose up -d
 # Open http://localhost:3000
 ```
+
+The image is a multi-stage build (Node build stage -> Caddy runtime). Caddy is rebuilt with the `github.com/mholt/caddy-ratelimit` module because the Caddyfile uses the `rate_limit` directive, and the image ships a `HEALTHCHECK`.
 </details>
 
 <details>
@@ -93,6 +101,8 @@ docker compose up -d
 npm run build     # dist/ folder
 npm run preview   # preview locally
 ```
+
+`npm run build` prints the bundle and CSS sizes; `npm run analyze` writes a bundle visualization.
 </details>
 
 ---
@@ -132,7 +142,7 @@ npm run preview   # preview locally
 
 ### Security
 
-- AES-256-GCM encryption for API keys (PBKDF2)
+- AES-256-GCM encryption for API keys (PBKDF2, 100k iterations)
 - XSS sanitization on all inputs
 - Parameterized SQL queries
 - Rate limiting (10 req/min)
@@ -144,8 +154,8 @@ npm run preview   # preview locally
 
 ### Developer Experience
 
-- **160 tests** (unit, integration, property-based)
-- **16 E2E tests** (Playwright)
+- **600 tests** in 47 files (unit, integration, property-based)
+- **49 E2E tests** in 12 spec files (Playwright)
 - **Lighthouse CI** in GitHub Actions
 - Pre-commit hooks (eslint, lint-staged)
 - Commitlint with conventional commits
@@ -159,7 +169,7 @@ npm run preview   # preview locally
 
 ## AI Providers
 
-QA Copilot supports **9 providers** with a unified interface. Pick any — the experience is identical.
+Drafter supports **9 providers** with a unified interface. Pick any — the experience is identical.
 
 | Provider | Free? | Default Model | Get Key |
 |----------|-------|---------------|---------|
@@ -180,11 +190,16 @@ QA Copilot supports **9 providers** with a unified interface. Pick any — the e
 ```
 src/
   components/
+    chat/              # Chat message rendering
     features/          # App panels: ChatArea, Sidebar, TaskSelector, etc.
-    ui/                # GlassCard, RippleButton, Modal, Toast, etc.
     layout/            # MainLayout
+    modals/            # Settings, shortcuts and other modals
+    panels/            # Side panels (history, memory, etc.)
+    selectors/         # Provider / model / task selectors
+    ui/                # GlassCard, RippleButton, Modal, Toast, etc.
   config/              # Task types, prompts, presets, security config
   data/
+    agent/             # Agentic loop and tool definitions
     api/               # 9 AI provider services + UnifiedAiService
     codebase/          # GitHub & Local codebase connectors
     repositories/      # SQLite repositories (Project, Task, Memory)
@@ -192,9 +207,11 @@ src/
     entities/          # TypeScript models (Project, Task, Memory, Session)
     usecases/          # Business logic (ProjectUseCases, TaskUseCases, etc.)
   hooks/               # Custom hooks (useDatabase, useExecution, useTheme, etc.)
-  lib/                 # Core services (database, encryption, export, storage)
+  lib/                 # Core services (database, encryption, export, storage, legacyMigration)
   presentation/        # Context providers (UseCasesContext)
   store/               # Zustand state management
+  types/               # Shared TypeScript types
+  workers/             # Web workers (SQLite, parsing)
   __tests__/           # Unit, integration, property-based tests
 ```
 
@@ -206,19 +223,25 @@ src/
 
 | Shortcut | Action |
 |----------|--------|
+| `Ctrl/Cmd + K` | Open command palette |
 | `Ctrl/Cmd + Enter` | Execute task |
-| `Ctrl/Cmd + Shift + C` | Copy output |
+| `Ctrl + E` | Execute task |
+| `Ctrl + Shift + R` | Reset task |
+| `Ctrl + Shift + C` | Copy output |
 | `Ctrl/Cmd + T` | Toggle theme |
-| `Escape` | Close modal |
+| `Ctrl + /` | Show shortcuts |
+| `Escape` | Close modals |
+
+The copy shortcut is deliberately `Ctrl + Shift + C` rather than plain `Ctrl + C`, so native copy is never hijacked.
 
 ---
 
 ## Testing
 
 ```bash
-npm run test          # 160 unit/integration tests
+npm run test          # 600 unit/integration tests in 47 files
 npm run test:watch    # Watch mode
-npm run test:e2e      # 16 Playwright E2E tests
+npm run test:e2e      # 49 Playwright E2E tests in 12 spec files
 ```
 
 **Test coverage:** utils, database, security, components, tasks, QaAgent, circuit breaker, zip parser, property-based (10k iterations).
@@ -227,13 +250,16 @@ npm run test:e2e      # 16 Playwright E2E tests
 
 ## Deploy
 
+### GitHub Pages
+Pushing to `master` triggers `.github/workflows/deploy.yml`, which builds with `VITE_BASE=/drafter/` and publishes to https://ssrjkk.github.io/drafter/.
+
 ### Vercel / Netlify
 Push to GitHub, connect repo, auto-deploy. Build command: `npm run build`, output: `dist/`.
 
 ### Docker
 ```yaml
 services:
-  qa-copilot:
+  drafter:
     build: .
     ports:
       - "3000:80"
@@ -252,18 +278,18 @@ npm run build
 
 | Layer | Technology |
 |-------|-----------|
-| UI | React 18, TypeScript 5.7, TailwindCSS 3 |
-| State | Zustand 5 |
-| Animations | Framer Motion 11 |
-| Database | sql.js (SQLite WASM) + IndexedDB |
-| PDF | jsPDF |
+| UI | React 18.3, TypeScript 5.7, TailwindCSS 3.4 |
+| State | Zustand 5 + immer |
+| Database | sql.js 1.10 (SQLite WASM) + IndexedDB |
+| PDF | jsPDF 4 |
+| Archive | JSZip |
 | Virtualization | @tanstack/react-virtual |
 | Testing | Vitest, Playwright, @testing-library |
 | Build | Vite 5, esbuild |
-| CI | GitHub Actions (typecheck, lint, test, build, E2E, Lighthouse) |
+| CI | GitHub Actions (typecheck, lint, test, build, E2E, Lighthouse, Docker) |
 | Quality | ESLint 9, Commitlint, Husky, lint-staged |
 
-**Bundle:** 53KB gzipped (main chunk) | **CSS:** 6KB gzipped
+Bundle and CSS sizes are printed by `npm run build`; `npm run analyze` writes a bundle visualization.
 
 ---
 
@@ -271,7 +297,7 @@ npm run build
 
 | Resource | Limit |
 |----------|-------|
-| Context length | 100,000 characters |
+| Context length | 10,000 characters |
 | Rate limit | 10 requests/minute |
 | Screenshot upload | 5MB max |
 | Session history | 50 entries |
@@ -287,6 +313,8 @@ All optional — can be configured in-app via the settings modal.
 VITE_API_URL=https://api.anthropic.com/v1/messages
 VITE_MODEL=claude-sonnet-4-20250514
 VITE_MAX_TOKENS=8192
+VITE_BASE=/drafter/          # base path for the built app
+TEST_MASTER_PASSWORD=secret  # E2E tests only
 ```
 
 ---

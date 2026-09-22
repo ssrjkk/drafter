@@ -6,7 +6,7 @@
 
 import { arrayBufferToBase64, base64ToArrayBuffer } from './base64';
 
-const DB_NAME = 'qa-copilot-keys';
+const DB_NAME = 'drafter-keys';
 const DB_VERSION = 1;
 const STORE_NAME = 'key-vault';
 const SALT_KEY = 'master-salt';
@@ -89,7 +89,8 @@ async function decryptWith(key: CryptoKey, encoded: string): Promise<string> {
   return new TextDecoder().decode(decrypted);
 }
 
-const VERIFY_PLAINTEXT = 'qa-copilot-verify';
+const VERIFY_PLAINTEXT = 'drafter-verify';
+const LEGACY_VERIFY_PLAINTEXT = 'qa-copilot-verify';
 
 export class KeyManager {
   private masterKey: CryptoKey | null = null;
@@ -128,10 +129,14 @@ export class KeyManager {
         }
         const key = await deriveKey(password, new Uint8Array(storedSalt));
         const decrypted = await decryptWith(key, storedVerify);
-        if (decrypted !== VERIFY_PLAINTEXT) {
+        if (decrypted !== VERIFY_PLAINTEXT && decrypted !== LEGACY_VERIFY_PLAINTEXT) {
           throw new Error('Invalid master password');
         }
         this.masterKey = key;
+        // Upgrade vaults written before the rename to the current verify token.
+        if (decrypted !== VERIFY_PLAINTEXT) {
+          await idbPut(db, VERIFY_KEY, await encryptWith(key, VERIFY_PLAINTEXT));
+        }
       }
 
       this._verified = true;

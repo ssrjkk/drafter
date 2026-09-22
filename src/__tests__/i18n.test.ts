@@ -13,7 +13,7 @@ describe('i18n', () => {
 
   it('t() returns English text by default', () => {
     setLocale('en');
-    expect(t('app.name')).toBe('QA Copilot');
+    expect(t('app.name')).toBe('Drafter');
   });
 
   it('t() returns key when not found', () => {
@@ -56,7 +56,7 @@ describe('i18n', () => {
   });
 
   it('initI18n reads from localStorage', () => {
-    localStorage.setItem('qa-copilot-locale', 'uk');
+    localStorage.setItem('drafter-locale', 'uk');
     const result = initI18n();
     expect(result).toBe('uk');
     expect(getLocale()).toBe('uk');
@@ -83,7 +83,7 @@ describe('i18n', () => {
   it('t() returns English fallback for missing Russian key', () => {
     setLocale('ru');
     const enVal = t('app.name');
-    expect(enVal).toBe('QA Copilot');
+    expect(enVal).toBe('Drafter');
   });
 
   it('t() handles Ukrainian locale', () => {
@@ -93,7 +93,7 @@ describe('i18n', () => {
   });
 
   it('t() handles empty params', () => {
-    expect(t('app.name')).toBe('QA Copilot');
+    expect(t('app.name')).toBe('Drafter');
   });
 
   it('t() handles partial params', () => {

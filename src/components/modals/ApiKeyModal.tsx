@@ -11,6 +11,7 @@ import { PROVIDER_INFO, type AiProvider } from '../../data/api/types';
 import { Modal } from '../ui';
 import { ErrorService } from '../../lib/errorService';
 import { ErrorCode } from '../../lib/constants';
+import { t } from '../../lib/i18n';
 
 interface ApiKeyModalProps {
   onClose: () => void;
@@ -32,21 +33,21 @@ export function ApiKeyModal({ onClose, provider = 'claude' }: ApiKeyModalProps) 
       store.setShowApiKeyInput(false);
     } catch (err) {
       ErrorService.reportAsync(ErrorCode.API_KEY_INVALID, err);
-      store.setError('Failed to save API key');
+      store.setError(t('apiKey.saveFailed'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal isOpen={true} onClose={onClose} title={`API Key — ${providerInfo.name}`}>
-      <p className="text-sm text-gray-400 mb-4">
-        {providerInfo.free ? 'Free tier available' : 'Paid'} · Get your key at{' '}
+    <Modal isOpen={true} onClose={onClose} title={t('apiKey.title', { provider: providerInfo.name })}>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        {providerInfo.free ? t('apiKey.freeTier') : t('apiKey.paid')} · {t('apiKey.getKeyAt')}{' '}
         <a
           href={providerInfo.docsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-purple-400 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500"
+          className="text-purple-600 dark:text-purple-400 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500"
         >
           {new URL(providerInfo.docsUrl).hostname}
         </a>
@@ -56,25 +57,25 @@ export function ApiKeyModal({ onClose, provider = 'claude' }: ApiKeyModalProps) 
         value={key}
         onChange={(e) => setKey(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-        placeholder="Paste your API key..."
-        aria-label="API Key"
+        placeholder={t('apiKey.placeholder')}
+        aria-label={t('apiKey.label')}
         autoFocus
-        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500 focus:border-purple-500 transition-colors"
+        className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500 focus:border-purple-500 transition-colors"
       />
       <div className="flex gap-3 mt-4">
         <button
           onClick={onClose}
           disabled={saving}
-          className="flex-1 px-4 py-2 bg-white/5 text-gray-300 rounded-lg hover:bg-white/10 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+          className="flex-1 px-4 py-2 bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
         >
-          Cancel
+          {t('common.cancel')}
         </button>
         <button
           onClick={handleSave}
           disabled={saving || !key.trim()}
           className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500"
         >
-          {saving ? 'Saving...' : 'Save'}
+          {saving ? t('apiKey.saving') : t('common.save')}
         </button>
       </div>
     </Modal>

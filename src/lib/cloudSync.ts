@@ -405,7 +405,7 @@ export class CloudSyncService {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `qa-helper-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `drafter-backup-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

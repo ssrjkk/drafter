@@ -20,7 +20,7 @@ describe('exportUtils', () => {
     it('includes header and output', async () => {
       const blob = await exportUtils.toMarkdown(baseOptions);
       const text = await blob.text();
-      expect(text).toContain('QA Copilot');
+      expect(text).toContain('Drafter');
       expect(text).toContain('Test output content');
     });
 
@@ -40,7 +40,7 @@ describe('exportUtils', () => {
       const opts: MarkdownOptions = { ...baseOptions, includeMeta: false };
       const blob = await exportUtils.toMarkdown(opts);
       const text = await blob.text();
-      expect(text).not.toContain('# QA Copilot');
+      expect(text).not.toContain('# Drafter');
       expect(text).toContain('Test output content');
     });
 
@@ -154,7 +154,7 @@ describe('exportUtils', () => {
       const blob = await exportUtils.toText(baseOptions);
       expect(blob.type).toContain('text/plain');
       const text = await blob.text();
-      expect(text).toContain('QA HELPER REPORT');
+      expect(text).toContain('DRAFTER REPORT');
       expect(text).toContain('Test output content');
     });
 
@@ -181,7 +181,7 @@ describe('exportUtils', () => {
   describe('generateFilename()', () => {
     it('generates filename with date', () => {
       const name = exportUtils.generateFilename('md');
-      expect(name).toMatch(/^qa-report-\d{4}-\d{2}-\d{2}\.md$/);
+      expect(name).toMatch(/^drafter-report-\d{4}-\d{2}-\d{2}\.md$/);
     });
 
     it('includes task type in prefix when provided', () => {

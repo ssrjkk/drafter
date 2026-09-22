@@ -1,16 +1,15 @@
 <div align="center">
 
-# QA Copilot
+# Drafter
 
 ### AI-Powered QA Assistant
 
 **Генерация тест-планов, анализ кода, написание баг-репортов — на базе 9 AI-провайдеров.**
 
-[![CI](https://github.com/ssrjkk/qa-helper/actions/workflows/ci.yml/badge.svg)](https://github.com/ssrjkk/qa-helper/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-160%20passed-22c55e)](#testing)
-[![Bundle](https://img.shields.io/bundlejs/size/@minified?gzip=true&label=bundle&color=6366f1)](#tech-stack)
+[![CI](https://github.com/ssrjkk/drafter/actions/workflows/ci.yml/badge.svg)](https://github.com/ssrjkk/drafter/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-600%20passed-22c55e)](#тестирование)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](#tech-stack)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](#технологический-стек)
 
 [Быстрый старт](#быстрый-старт) | [Возможности](#возможности) | [Провайдеры](#ai-провайдеры) | [Деплой](#деплой) | [Контрибьюция](#контрибьюция)
 
@@ -20,7 +19,7 @@
 
 ---
 
-## Что такое QA Copilot?
+## Что такое Drafter?
 
 QA-ассистент в браузере, который превращает описания задач в структурированные артефакты: тест-планы, тест-кейсы, код автоматизации, баг-репорты, проверки безопасности и многое другое. Сервер не нужен. Работает целиком в браузере на SQLite (WebAssembly).
 
@@ -57,13 +56,26 @@ QA-ассистент в браузере, который превращает �
 
 ---
 
+## О проекте
+
+Drafter — QA-ассистент в браузере без сервера, который генерирует профессиональные QA-артефакты из описаний задач. Подключается к 9 AI-провайдерам (7 бесплатных), выполняет агентный цикл с анализом кодовой базы и хранит всё локально через SQLite WASM. Создан для QA-инженеров, которым нужны быстрые структурированные результаты без выхода из браузера.
+
+- **Сайт:** https://drafter.ssrjkk.dev
+- **Репозиторий:** https://github.com/ssrjkk/drafter
+
+### Переименование из QA Copilot
+
+Ранее проект назывался **QA Copilot** (репозиторий `ssrjkk/qa-helper`). Переименование изменило все идентификаторы хранилища, поэтому при первом запуске после обновления `src/lib/legacyMigration.ts` копирует старые ключи localStorage (`qa-copilot-*`, `qa-helper-*`) и старые базы IndexedDB (`qa-helper-db`, `qa-copilot-keys`) в новые имена `drafter-*`, а `src/lib/keyManagement.ts` обновляет старый verify-токен мастер-пароля. Существующие установки сохраняют данные, API-ключ и мастер-пароль.
+
+---
+
 ## Быстрый старт
 
 **3 шага до первого результата:**
 
 ```bash
-git clone https://github.com/ssrjkk/qa-helper.git
-cd qa-helper
+git clone https://github.com/ssrjkk/drafter.git
+cd drafter
 npm install && npm run dev
 ```
 
@@ -78,6 +90,8 @@ npm install && npm run dev
 docker compose up -d
 # Открой http://localhost:3000
 ```
+
+Образ собирается в несколько этапов (стадия сборки на Node -> рантайм на Caddy). Caddy пересобирается с модулем `github.com/mholt/caddy-ratelimit`, потому что Caddyfile использует директиву `rate_limit`, а образ содержит `HEALTHCHECK`.
 </details>
 
 <details>
@@ -87,6 +101,8 @@ docker compose up -d
 npm run build     # папка dist/
 npm run preview   # предпросмотр локально
 ```
+
+`npm run build` печатает размеры бандла и CSS; `npm run analyze` создаёт визуализацию бандла.
 </details>
 
 ---
@@ -126,7 +142,7 @@ npm run preview   # предпросмотр локально
 
 ### Безопасность
 
-- AES-256-GCM шифрование API-ключей (PBKDF2)
+- AES-256-GCM шифрование API-ключей (PBKDF2, 100k итераций)
 - XSS-санитизация всего ввода
 - Параметризованные SQL-запросы
 - Rate limiting (10 запросов/мин)
@@ -138,8 +154,8 @@ npm run preview   # предпросмотр локально
 
 ### Developer Experience
 
-- **160 тестов** (unit, integration, property-based)
-- **16 E2E тестов** (Playwright)
+- **600 тестов** в 47 файлах (unit, integration, property-based)
+- **49 E2E тестов** в 12 spec-файлах (Playwright)
 - **Lighthouse CI** в GitHub Actions
 - Pre-commit хуки (eslint, lint-staged)
 - Commitlint с conventional commits
@@ -153,7 +169,7 @@ npm run preview   # предпросмотр локально
 
 ## AI-провайдеры
 
-QA Copilot поддерживает **9 провайдеров** с единым интерфейсом. Любой на выбор — опыт одинаковый.
+Drafter поддерживает **9 провайдеров** с единым интерфейсом. Любой на выбор — опыт одинаковый.
 
 | Провайдер | Бесплатный? | Модель по умолчанию | Получить ключ |
 |-----------|-------------|---------------------|---------------|
@@ -174,11 +190,16 @@ QA Copilot поддерживает **9 провайдеров** с единым
 ```
 src/
   components/
+    chat/              # Рендеринг сообщений чата
     features/          # Панели приложения: ChatArea, Sidebar, TaskSelector и т.д.
-    ui/                # GlassCard, RippleButton, Modal, Toast и т.д.
     layout/            # MainLayout
+    modals/            # Модалки настроек, горячих клавиш и т.д.
+    panels/            # Боковые панели (история, память и т.д.)
+    selectors/         # Селекторы провайдера / модели / задачи
+    ui/                # GlassCard, RippleButton, Modal, Toast и т.д.
   config/              # Типы задач, промпты, пресеты, конфигурация безопасности
   data/
+    agent/             # Агентный цикл и определения инструментов
     api/               # 9 сервисов AI-провайдеров + UnifiedAiService
     codebase/          # Подключение GitHub и локального кода
     repositories/      # Репозитории SQLite (Project, Task, Memory)
@@ -186,9 +207,11 @@ src/
     entities/          # TypeScript-модели (Project, Task, Memory, Session)
     usecases/          # Бизнес-логика (ProjectUseCases, TaskUseCases и т.д.)
   hooks/               # Кастомные хуки (useDatabase, useExecution, useTheme и т.д.)
-  lib/                 # Ядро (database, encryption, export, storage)
+  lib/                 # Ядро (database, encryption, export, storage, legacyMigration)
   presentation/        # Контекст-провайдеры (UseCasesContext)
   store/               # Состояние (Zustand)
+  types/               # Общие TypeScript-типы
+  workers/             # Web workers (SQLite, парсинг)
   __tests__/           # Unit, integration, property-based тесты
 ```
 
@@ -200,19 +223,25 @@ src/
 
 | Комбинация | Действие |
 |-----------|----------|
+| `Ctrl/Cmd + K` | Открыть командную палитру |
 | `Ctrl/Cmd + Enter` | Выполнить задачу |
-| `Ctrl/Cmd + Shift + C` | Копировать вывод |
+| `Ctrl + E` | Выполнить задачу |
+| `Ctrl + Shift + R` | Сбросить задачу |
+| `Ctrl + Shift + C` | Копировать вывод |
 | `Ctrl/Cmd + T` | Переключить тему |
-| `Escape` | Закрыть модалку |
+| `Ctrl + /` | Показать горячие клавиши |
+| `Escape` | Закрыть модалки |
+
+Комбинация копирования намеренно `Ctrl + Shift + C`, а не обычная `Ctrl + C`, чтобы никогда не перехватывать нативное копирование.
 
 ---
 
 ## Тестирование
 
 ```bash
-npm run test          # 160 unit/integration тестов
+npm run test          # 600 unit/integration тестов в 47 файлах
 npm run test:watch    # Watch mode
-npm run test:e2e      # 16 Playwright E2E тестов
+npm run test:e2e      # 49 Playwright E2E тестов в 12 spec-файлах
 ```
 
 **Покрытие:** утилиты, база данных, безопасность, компоненты, задачи, QaAgent, circuit breaker, zip-парсер, property-based (10k итераций).
@@ -221,13 +250,16 @@ npm run test:e2e      # 16 Playwright E2E тестов
 
 ## Деплой
 
+### GitHub Pages
+Пуш в `master` запускает `.github/workflows/deploy.yml`, который собирает проект с `VITE_BASE=/drafter/` и публикует на https://ssrjkk.github.io/drafter/.
+
 ### Vercel / Netlify
 Пуш в GitHub, подключаешь репо, автодеплой. Build command: `npm run build`, output: `dist/`.
 
 ### Docker
 ```yaml
 services:
-  qa-copilot:
+  drafter:
     build: .
     ports:
       - "3000:80"
@@ -246,18 +278,18 @@ npm run build
 
 | Слой | Технология |
 |------|-----------|
-| UI | React 18, TypeScript 5.7, TailwindCSS 3 |
-| Состояние | Zustand 5 |
-| Анимации | Framer Motion 11 |
-| База данных | sql.js (SQLite WASM) + IndexedDB |
-| PDF | jsPDF |
+| UI | React 18.3, TypeScript 5.7, TailwindCSS 3.4 |
+| Состояние | Zustand 5 + immer |
+| База данных | sql.js 1.10 (SQLite WASM) + IndexedDB |
+| PDF | jsPDF 4 |
+| Архивы | JSZip |
 | Виртуализация | @tanstack/react-virtual |
 | Тестирование | Vitest, Playwright, @testing-library |
 | Сборка | Vite 5, esbuild |
-| CI | GitHub Actions (typecheck, lint, test, build, E2E, Lighthouse) |
+| CI | GitHub Actions (typecheck, lint, test, build, E2E, Lighthouse, Docker) |
 | Качество | ESLint 9, Commitlint, Husky, lint-staged |
 
-**Бандл:** 53KB gzipped (основной чанк) | **CSS:** 6KB gzipped
+Размеры бандла и CSS печатает `npm run build`; `npm run analyze` создаёт визуализацию бандла.
 
 ---
 
@@ -265,7 +297,7 @@ npm run build
 
 | Ресурс | Лимит |
 |--------|-------|
-| Длина контекста | 100,000 символов |
+| Длина контекста | 10,000 символов |
 | Rate limit | 10 запросов/минуту |
 | Загрузка скриншотов | 5MB максимум |
 | История сессий | 50 записей |
@@ -281,6 +313,8 @@ npm run build
 VITE_API_URL=https://api.anthropic.com/v1/messages
 VITE_MODEL=claude-sonnet-4-20250514
 VITE_MAX_TOKENS=8192
+VITE_BASE=/drafter/          # базовый путь для собранного приложения
+TEST_MASTER_PASSWORD=secret  # только для E2E тестов
 ```
 
 ---

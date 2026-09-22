@@ -20,6 +20,7 @@ import { sanitizeErrorForDisplay } from './lib/utils';
 import { UseCasesProvider } from './presentation';
 import { useAppStore } from './store/useAppStore';
 import { APP_NAME, APP_HEADER_SUBTITLE, APP_HEADER_BYLINE, APP_FOOTER } from './lib/constants';
+import { t } from './lib/i18n';
 import { LazySuspense } from './components/features/LazyComponents';
 
 const ApiKeyModal = lazy(() => import('./components/modals/ApiKeyModal').then(m => ({ default: m.ApiKeyModal })));
@@ -121,13 +122,13 @@ function AppInner() {
         {db.error ? (
           <div className="text-center py-20" role="alert" aria-live="assertive">
             <div className="text-4xl mb-4">⚠️</div>
-            <h2 className="text-lg font-medium text-red-600 dark:text-red-400 mb-2">Database Error</h2>
+            <h2 className="text-lg font-medium text-red-600 dark:text-red-400 mb-2">{t('errors.databaseError')}</h2>
             <p className="text-sm text-gray-500 mb-4">{db.error}</p>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/20 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
             >
-              Retry
+              {t('common.retry')}
             </button>
           </div>
         ) : db.isDbReady ? (
@@ -135,7 +136,7 @@ function AppInner() {
             <AppContent db={db} />
           </UseCasesProvider>
         ) : (
-          <div className="space-y-4" role="status" aria-live="polite" aria-label="Loading database">
+          <div className="space-y-4" role="status" aria-live="polite" aria-label={t('errors.loadingDatabase')}>
             <SkeletonCard />
             <SkeletonCard />
             <SkeletonCard />
@@ -154,10 +155,10 @@ function AppInner() {
     <LazySuspense>
       <CommandPalette
         commands={[
-          { id: 'api-key', label: 'Set API Key', description: 'Configure your AI provider API key', category: 'Settings', action: () => setShowApiKeyInput(true), icon: '🔑' },
-          { id: 'reset', label: 'Reset Task', description: 'Clear current context and output', category: 'Task', action: () => window.dispatchEvent(new CustomEvent('reset-task')), icon: '↺' },
-          { id: 'execute', label: 'Execute Task', description: 'Generate output for current task', category: 'Task', action: () => window.dispatchEvent(new CustomEvent('execute-task')), icon: '🚀' },
-          { id: 'copy', label: 'Copy Output', description: 'Copy generated output to clipboard', category: 'Task', action: () => window.dispatchEvent(new CustomEvent('copy-output')), icon: '📋' },
+          { id: 'api-key', label: t('commandPalette.setApiKey'), description: t('commandPalette.setApiKeyDesc'), category: t('commandPalette.categorySettings'), action: () => setShowApiKeyInput(true), icon: '🔑' },
+          { id: 'reset', label: t('commandPalette.resetTask'), description: t('commandPalette.resetTaskDesc'), category: t('commandPalette.categoryTask'), action: () => window.dispatchEvent(new CustomEvent('reset-task')), icon: '↺' },
+          { id: 'execute', label: t('commandPalette.executeTask'), description: t('commandPalette.executeTaskDesc'), category: t('commandPalette.categoryTask'), action: () => window.dispatchEvent(new CustomEvent('execute-task')), icon: '🚀' },
+          { id: 'copy', label: t('commandPalette.copyOutput'), description: t('commandPalette.copyOutputDesc'), category: t('commandPalette.categoryTask'), action: () => window.dispatchEvent(new CustomEvent('copy-output')), icon: '📋' },
         ]}
         open={showCommandPalette}
         onClose={() => setShowCommandPalette(false)}

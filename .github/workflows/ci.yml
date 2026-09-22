@@ -95,11 +95,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -109,6 +104,6 @@ jobs:
           context: .
           push: false
           load: true
-          tags: qa-copilot:ci
+          tags: drafter:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max

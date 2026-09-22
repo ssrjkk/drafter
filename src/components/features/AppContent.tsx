@@ -40,6 +40,7 @@ export const AppContent = memo(function AppContent({ db }: AppContentProps) {
   const memoryEntries = useAppStore((s) => s.memoryEntries);
   const selectedTask = useAppStore((s) => s.selectedTask);
   const setSelectedTask = useAppStore((s) => s.setSelectedTask);
+  const setScreenshotBase64 = useAppStore((s) => s.setScreenshotBase64);
   const context = useAppStore((s) => s.context);
   const setContext = useAppStore((s) => s.setContext);
   const isLoading = useAppStore((s) => s.isLoading);
@@ -85,15 +86,9 @@ export const AppContent = memo(function AppContent({ db }: AppContentProps) {
     [
       {
         key: 'Enter',
-        modifiers: ['meta', 'ctrl'],
+        modifiers: ['ctrl'],
         action: () => handleExecuteRef.current?.(),
         description: 'Execute',
-      },
-      {
-        key: 'c',
-        modifiers: ['meta', 'ctrl', 'shift'],
-        action: () => copyToClipboard(output),
-        description: 'Copy output',
       },
       {
         key: 'Escape',
@@ -102,7 +97,7 @@ export const AppContent = memo(function AppContent({ db }: AppContentProps) {
       },
       {
         key: 't',
-        modifiers: ['meta', 'ctrl'],
+        modifiers: ['ctrl'],
         action: toggleTheme,
         description: 'Toggle theme',
       },
@@ -195,6 +190,7 @@ export const AppContent = memo(function AppContent({ db }: AppContentProps) {
       codebaseProvider={codebaseProvider}
       onCodebaseConnect={handleConnect}
       onCodebaseDisconnect={handleDisconnect}
+      onScreenshotChange={setScreenshotBase64}
     />
   );
 

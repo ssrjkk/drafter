@@ -38,11 +38,11 @@ describe('useTheme', () => {
   it('persists theme to localStorage', () => {
     const { result } = renderHook(() => useTheme());
     act(() => result.current.setTheme('light'));
-    expect(localStorage.getItem('qa-copilot-theme')).toBe('light');
+    expect(localStorage.getItem('drafter-theme')).toBe('light');
   });
 
   it('reads persisted theme from localStorage', () => {
-    localStorage.setItem('qa-copilot-theme', 'light');
+    localStorage.setItem('drafter-theme', 'light');
     const { result } = renderHook(() => useTheme());
     expect(result.current.theme).toBe('light');
   });

@@ -9,6 +9,7 @@ import { GlassCard, RippleButton } from '../ui';
 import { copyToClipboard } from '../../lib';
 import { ErrorService } from '../../lib/errorService';
 import { ErrorCode, LIMITS } from '../../lib/constants';
+import { t } from '../../lib/i18n';
 
 interface ExportPanelProps {
   output: string;
@@ -73,22 +74,22 @@ export const ExportPanel = memo(function ExportPanel({ output, context, taskType
   };
 
   const formats = [
-    { id: 'markdown' as const, label: 'Markdown', icon: '📝', desc: 'For docs' },
-    { id: 'pdf' as const, label: 'PDF', icon: '📄', desc: 'Printable' },
-    { id: 'json' as const, label: 'JSON', icon: '📋', desc: 'Raw data' }
+    { id: 'markdown' as const, label: t('export.markdown'), icon: '📝', desc: t('export.descDocs') },
+    { id: 'pdf' as const, label: t('export.pdf'), icon: '📄', desc: t('export.descPrintable') },
+    { id: 'json' as const, label: t('export.json'), icon: '📋', desc: t('export.descRaw') }
   ] as const;
 
   return (
     <div className="overflow-hidden animate-fadeIn">
       <GlassCard className="p-4">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Export Options</h4>
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('export.options')}</h4>
           {onClose && (
             <button
               onClick={onClose}
               className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             >
-              Close
+              {t('common.close')}
             </button>
           )}
         </div>
@@ -113,7 +114,7 @@ export const ExportPanel = memo(function ExportPanel({ output, context, taskType
           variant="secondary"
           className="w-full !py-2 text-sm"
         >
-          {copied ? '✅ Copied!' : '📋 Copy to Clipboard'}
+          {copied ? `✅ ${t('export.copied')}` : `📋 ${t('export.copyToClipboard')}`}
         </RippleButton>
       </GlassCard>
     </div>
