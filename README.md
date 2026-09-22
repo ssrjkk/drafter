@@ -60,7 +60,7 @@ A browser-based QA assistant that turns your task descriptions into structured o
 
 Drafter is a browser-based, zero-server QA assistant that generates professional QA artifacts from task descriptions. It connects to 9 AI providers (7 free), runs a tool-use agentic loop with codebase analysis, and stores everything locally via SQLite WASM. Built for QA engineers who need fast, structured outputs without leaving the browser.
 
-- **Website:** https://drafter.ssrjkk.dev
+- **Live demo:** https://ssrjkk.github.io/drafter/
 - **Repository:** https://github.com/ssrjkk/drafter
 
 ### Renamed from QA Copilot

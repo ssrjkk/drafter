@@ -6,7 +6,7 @@
 
 export const APP_NAME = 'Drafter';
 export const APP_AUTHOR = 'ssrjkk';
-export const APP_WEBSITE = 'https://drafter.ssrjkk.dev';
+export const APP_WEBSITE = 'https://ssrjkk.github.io/drafter/';
 export const APP_REPOSITORY = 'https://github.com/ssrjkk/drafter';
 export const APP_FOOTER = `${APP_NAME} by ${APP_AUTHOR} | MIT License`;
 export const APP_HEADER_SUBTITLE = 'AI-Powered QA Assistant';
