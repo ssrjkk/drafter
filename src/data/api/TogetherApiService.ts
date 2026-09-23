@@ -9,6 +9,6 @@ interface TogetherConfig {
 
 export class TogetherApiService extends GenericApiService {
   constructor(config: TogetherConfig) {
-    super({ ...config, apiUrl: getDefaultApiUrl('together'), providerName: 'Together AI', temperature: 0.7 });
+    super({ ...config, apiUrl: getDefaultApiUrl('together'), provider: 'together', providerName: 'Together AI', temperature: 0.7 });
   }
 }

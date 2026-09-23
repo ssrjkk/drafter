@@ -5,6 +5,7 @@
  */
 
 import { APP_NAME } from './constants';
+import { sanitizeInput } from './utils';
 
 export interface ExportOptions {
   output: string;
@@ -38,10 +39,8 @@ export interface CsvRow {
 }
 
 function sanitizeMarkdown(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  // sanitizeInput handles HTML entity encoding; for markdown we preserve the trimmed result
+  return sanitizeInput(str);
 }
 
 function generateMarkdownContent(options: MarkdownOptions): string {

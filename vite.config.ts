@@ -7,6 +7,13 @@ export default defineConfig(({ mode }) => ({
   // Overridable so the same build works for root-served deploys (Docker, self-host)
   // and for GitHub Pages project sites, which are served from /<repo>/.
   base: process.env.VITE_BASE ?? '/',
+  // Default 'localhost' resolves to the IPv6 loopback on Node 17+, which is
+  // unreachable where IPv6 is disabled or firewalled (common on Windows).
+  // Playwright polls http://localhost:5173, so bind the IPv4 loopback explicitly.
+  server: {
+    host: '127.0.0.1',
+    port: 5173,
+  },
   plugins: [
     react(),
     ...(mode === 'analyze' ? [visualizer({

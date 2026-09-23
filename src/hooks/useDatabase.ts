@@ -46,7 +46,11 @@ export function useDatabase() {
     const initDb = async () => {
       try {
         performance.mark('db:init:start');
-        const SQL = await initSqlJs({ locateFile: (file: string) => `${import.meta.env.BASE_URL}${file}` });
+        // Always load the published asset by name: sql.js exposes a "browser" export
+        // condition whose glue asks for sql-wasm-browser.wasm, which we do not ship, so
+        // the request would fall through to the SPA index.html and fail with a WASM
+        // magic-word CompileError.
+        const SQL = await initSqlJs({ locateFile: () => `${import.meta.env.BASE_URL}sql-wasm.wasm` });
         const storage = await createStorageProvider();
 
         let database: Database;

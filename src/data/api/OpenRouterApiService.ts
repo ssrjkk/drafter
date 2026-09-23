@@ -14,6 +14,7 @@ export class OpenRouterApiService extends GenericApiService {
     super({
       ...config,
       apiUrl: config.apiUrl || getDefaultApiUrl('openrouter'),
+      provider: 'openrouter',
       providerName: 'OpenRouter',
       extraHeaders: {
         'HTTP-Referer': APP_WEBSITE,

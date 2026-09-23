@@ -300,6 +300,23 @@ const messages: Record<Locale, NestedMessages> = {
       categorySettings: 'Settings',
       categoryTask: 'Task',
     },
+    shortcuts: {
+      title: 'Keyboard Shortcuts',
+      commandPalette: 'Command palette',
+      showShortcuts: 'Show shortcuts',
+      executeTask: 'Execute task',
+      resetTask: 'Reset task',
+      copyOutput: 'Copy output',
+      toggleTheme: 'Toggle theme',
+      redo: 'Redo',
+      undo: 'Undo',
+      closeModal: 'Close modal',
+    },
+    provider: {
+      provider: 'Provider',
+      model: 'Model',
+      free: 'Free',
+    },
   },
   ru: {
     app: {
@@ -590,6 +607,23 @@ const messages: Record<Locale, NestedMessages> = {
       categorySettings: 'Настройки',
       categoryTask: 'Задача',
     },
+    shortcuts: {
+      title: 'Горячие клавиши',
+      commandPalette: 'Палитра команд',
+      showShortcuts: 'Показать горячие клавиши',
+      executeTask: 'Выполнить задачу',
+      resetTask: 'Сбросить задачу',
+      copyOutput: 'Копировать вывод',
+      toggleTheme: 'Переключить тему',
+      redo: 'Повторить',
+      undo: 'Отменить',
+      closeModal: 'Закрыть модальное окно',
+    },
+    provider: {
+      provider: 'Провайдер',
+      model: 'Модель',
+      free: 'Бесплатно',
+    },
   },
   uk: {
     app: {
@@ -879,6 +913,23 @@ const messages: Record<Locale, NestedMessages> = {
       copyOutputDesc: 'Скопіювати згенерований результат до буфера обміну',
       categorySettings: 'Налаштування',
       categoryTask: 'Завдання',
+    },
+    shortcuts: {
+      title: 'Гарячі клавіші',
+      commandPalette: 'Палітра команд',
+      showShortcuts: 'Показати гарячі клавіші',
+      executeTask: 'Виконати завдання',
+      resetTask: 'Скинути завдання',
+      copyOutput: 'Копіювати вивід',
+      toggleTheme: 'Перемкнути тему',
+      redo: 'Повторити',
+      undo: 'Скасувати',
+      closeModal: 'Закрити модальне вікно',
+    },
+    provider: {
+      provider: 'Провайдер',
+      model: 'Модель',
+      free: 'Безкоштовно',
     },
   },
 };

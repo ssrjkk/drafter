@@ -6,6 +6,7 @@
 
 import { useMemo, useEffect, memo } from 'react';
 import { ContextPresets } from '../panels/ContextPresets';
+import { ProviderModelSelector } from '../selectors/ProviderModelSelector';
 import { useHistory } from '../../hooks/useHistory';
 import { t } from '../../lib/i18n';
 
@@ -54,6 +55,7 @@ export const ChatHeader = memo(function ChatHeader({ context, onContextChange, m
       <div className="flex items-center gap-3">
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('chat.taskDescription')}</h3>
         <ContextPresets onSelect={handleContextChange} currentContext={context} />
+        <ProviderModelSelector />
       </div>
       <div className="flex items-center gap-2">
         <button

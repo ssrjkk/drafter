@@ -10,6 +10,7 @@ import { LIMITS, PROTOTYPE_POLLUTION_KEYS } from '../lib/constants';
 import type { MemoryEntry } from '../types/memory';
 import type { AgentStep } from '../data/agent/types';
 import type { Session } from '../domain/entities/Session';
+import type { AiProvider } from '../data/api/types';
 
 interface AppState {
   selectedTask: string | null;
@@ -54,6 +55,12 @@ interface AppState {
 
   apiKeyValid: boolean;
   setApiKeyValid: (valid: boolean) => void;
+
+  provider: AiProvider;
+  setProvider: (provider: AiProvider) => void;
+
+  model: string;
+  setModel: (model: string) => void;
 
   agentSteps: AgentStep[];
   setAgentSteps: (steps: AgentStep[] | ((prev: AgentStep[]) => AgentStep[])) => void;
@@ -128,6 +135,12 @@ export const useAppStore = create<AppState>()(
 
     apiKeyValid: false,
     setApiKeyValid: (valid) => set((state) => { state.apiKeyValid = valid; }),
+
+    provider: 'claude',
+    setProvider: (provider) => set((state) => { state.provider = provider; }),
+
+    model: 'claude-sonnet-4-20250514',
+    setModel: (model) => set((state) => { state.model = model; }),
 
     agentSteps: [],
     setAgentSteps: (steps) => set((state) => {

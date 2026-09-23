@@ -25,6 +25,7 @@ import { LazySuspense } from './components/features/LazyComponents';
 
 const ApiKeyModal = lazy(() => import('./components/modals/ApiKeyModal').then(m => ({ default: m.ApiKeyModal })));
 const CommandPalette = lazy(() => import('./components/ui/CommandPalette').then(m => ({ default: m.CommandPalette })));
+const KeyboardShortcutsModal = lazy(() => import('./components/ui/KeyboardShortcutsModal').then(m => ({ default: m.KeyboardShortcutsModal })));
 
 function GradientWrapper({ children }: { children: ReactNode }) {
   return (
@@ -52,6 +53,7 @@ function AppInner() {
   const db = useDatabase();
   const [keyReady, setKeyReady] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const { addToast } = useToast();
 
   useAppLifecycle();
@@ -70,9 +72,19 @@ function AppInner() {
     const handleClose = () => setShowCommandPalette(false);
     window.addEventListener('toggle-command-palette', handleToggle);
     window.addEventListener('close-all-modals', handleClose);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        setShowShortcuts(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
     return () => {
       window.removeEventListener('toggle-command-palette', handleToggle);
       window.removeEventListener('close-all-modals', handleClose);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
@@ -156,6 +168,7 @@ function AppInner() {
       <CommandPalette
         commands={[
           { id: 'api-key', label: t('commandPalette.setApiKey'), description: t('commandPalette.setApiKeyDesc'), category: t('commandPalette.categorySettings'), action: () => setShowApiKeyInput(true), icon: '🔑' },
+          { id: 'shortcuts', label: t('shortcuts.showShortcuts'), description: 'Ctrl+/', category: t('commandPalette.categorySettings'), action: () => setShowShortcuts(true), icon: '⌨' },
           { id: 'reset', label: t('commandPalette.resetTask'), description: t('commandPalette.resetTaskDesc'), category: t('commandPalette.categoryTask'), action: () => window.dispatchEvent(new CustomEvent('reset-task')), icon: '↺' },
           { id: 'execute', label: t('commandPalette.executeTask'), description: t('commandPalette.executeTaskDesc'), category: t('commandPalette.categoryTask'), action: () => window.dispatchEvent(new CustomEvent('execute-task')), icon: '🚀' },
           { id: 'copy', label: t('commandPalette.copyOutput'), description: t('commandPalette.copyOutputDesc'), category: t('commandPalette.categoryTask'), action: () => window.dispatchEvent(new CustomEvent('copy-output')), icon: '📋' },
@@ -164,6 +177,11 @@ function AppInner() {
         onClose={() => setShowCommandPalette(false)}
       />
     </LazySuspense>
+    {showShortcuts && (
+      <LazySuspense>
+        <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />
+      </LazySuspense>
+    )}
     </>
   );
 }

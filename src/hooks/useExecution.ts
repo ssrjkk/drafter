@@ -63,6 +63,9 @@ export function useExecution(
     if (!s.selectedTask || !s.apiKey) return;
     if (s.mode === 'agent' && !codebaseProvider) return;
 
+    // Sync provider and model from store to aiService
+    aiService.setProvider(s.provider, s.apiKey, s.model);
+
     isExecutingRef.current = true;
     performance.mark('execute:start');
     try {

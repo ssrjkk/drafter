@@ -128,12 +128,14 @@ npm run preview   # preview locally
 
 ### Smart Features
 
+- **Provider & Model Selection** — switch between 9 AI providers and their models on the fly
 - **Streaming responses** — output appears in real-time
 - **Structured Memory** — AI extracts tech stack, bug patterns, conventions, and reuses them across tasks
 - **Context Presets** — pre-built templates for E2E, Unit, API, Mobile testing
 - **Agent Mode** — multi-step reasoning for complex QA tasks
 - **Export** — Markdown, PDF, JSON, CSV, TXT
 - **Session History** — virtualized list, search, load previous sessions
+- **Keyboard Shortcuts** — Ctrl+/ for shortcuts help, Ctrl+K for command palette
 
 </td>
 </tr>
@@ -193,7 +195,7 @@ src/
     chat/              # Chat message rendering
     features/          # App panels: ChatArea, Sidebar, TaskSelector, etc.
     layout/            # MainLayout
-    modals/            # Settings, shortcuts and other modals
+    modals/            # API key, master password and onboarding modals
     panels/            # Side panels (history, memory, etc.)
     selectors/         # Provider / model / task selectors
     ui/                # GlassCard, RippleButton, Modal, Toast, etc.
@@ -306,14 +308,11 @@ Bundle and CSS sizes are printed by `npm run build`; `npm run analyze` writes a 
 
 ## Environment Variables
 
-All optional — can be configured in-app via the settings modal.
+All optional. The app is fully configurable via the in-app settings modal (API keys, provider, model).
 
 ```env
 # .env (optional)
-VITE_API_URL=https://api.anthropic.com/v1/messages
-VITE_MODEL=claude-sonnet-4-20250514
-VITE_MAX_TOKENS=8192
-VITE_BASE=/drafter/          # base path for the built app
+VITE_BASE=/drafter/          # base path for the built app (default: /)
 TEST_MASTER_PASSWORD=secret  # E2E tests only
 ```
 

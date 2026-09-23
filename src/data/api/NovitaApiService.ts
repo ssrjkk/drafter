@@ -9,6 +9,6 @@ interface NovitaConfig {
 
 export class NovitaApiService extends GenericApiService {
   constructor(config: NovitaConfig) {
-    super({ ...config, apiUrl: getDefaultApiUrl('novita'), providerName: 'Novita AI', temperature: 0.7 });
+    super({ ...config, apiUrl: getDefaultApiUrl('novita'), provider: 'novita', providerName: 'Novita AI', temperature: 0.7 });
   }
 }

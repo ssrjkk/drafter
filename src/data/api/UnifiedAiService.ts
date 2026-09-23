@@ -96,6 +96,18 @@ async function importService(provider: AiProvider): Promise<LazyService> {
       const { GroqApiService } = await import('./GroqApiService');
       return new GroqApiService({ apiKey: '', model: m('groq'), maxTokens: 8192 });
     }
+    case 'openai': {
+      const { OpenAIApiService } = await import('./OpenAIApiService');
+      return new OpenAIApiService({ apiKey: '', model: m('openai'), maxTokens: 16384 });
+    }
+    case 'gemini': {
+      const { GeminiApiService } = await import('./GeminiApiService');
+      return new GeminiApiService({ apiKey: '', model: m('gemini'), maxTokens: 8192 });
+    }
+    case 'lepton': {
+      const { LeptonApiService } = await import('./LeptonApiService');
+      return new LeptonApiService({ apiKey: '', model: m('lepton'), maxTokens: 32768 });
+    }
     case 'openrouter': {
       const { OpenRouterApiService } = await import('./OpenRouterApiService');
       return new OpenRouterApiService({ apiKey: '', model: m('openrouter'), maxTokens: 8192 });

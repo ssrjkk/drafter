@@ -36,6 +36,7 @@ describe('GenericApiService', () => {
       model: 'test-model',
       maxTokens: 4096,
       apiUrl: 'https://api.example.com/v1/chat/completions',
+      provider: 'deepseek',
       providerName: 'TestProvider',
     });
   });
@@ -67,6 +68,7 @@ describe('GenericApiService', () => {
       model: 'm',
       maxTokens: 100,
       apiUrl: 'https://x.com',
+      provider: 'deepseek',
       providerName: 'X',
     });
     const result = await noKeySvc.execute({ systemPrompt: 's', userMessage: 'm' });
@@ -133,6 +135,7 @@ describe('GenericApiService', () => {
       model: 'm',
       maxTokens: 100,
       apiUrl: 'https://x.com',
+      provider: 'deepseek',
       providerName: 'X',
       extraHeaders: { 'X-Custom': 'test' },
     });
@@ -148,6 +151,7 @@ describe('GenericApiService', () => {
       model: 'm',
       maxTokens: 100,
       apiUrl: 'https://x.com',
+      provider: 'deepseek',
       providerName: 'X',
       temperature: 0.7,
     });

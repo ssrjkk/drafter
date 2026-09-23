@@ -9,6 +9,6 @@ interface DeepSeekConfig {
 
 export class DeepSeekApiService extends GenericApiService {
   constructor(config: DeepSeekConfig) {
-    super({ ...config, apiUrl: getDefaultApiUrl('deepseek'), providerName: 'DeepSeek' });
+    super({ ...config, apiUrl: getDefaultApiUrl('deepseek'), provider: 'deepseek', providerName: 'DeepSeek' });
   }
 }

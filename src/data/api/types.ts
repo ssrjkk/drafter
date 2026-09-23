@@ -65,6 +65,10 @@ export interface AiModel {
   description?: string;
 }
 
+export function getModelInfo(provider: AiProvider, modelId: string): AiModel | undefined {
+  return PROVIDER_MODELS[provider]?.find(m => m.id === modelId);
+}
+
 export function getDefaultModelForProvider(provider: AiProvider): AiModel {
   const models = PROVIDER_MODELS[provider];
   if (!models || models.length === 0) {
@@ -404,10 +408,10 @@ export const PROVIDER_INFO: Record<AiProvider, { name: string; apiUrl: string; d
   },
   gemini: {
     name: 'Google Gemini',
-    apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
-    docsUrl: 'https://ai.google.dev/gemini-api/docs',
+    apiUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    docsUrl: 'https://ai.google.dev/gemini-api/docs/openai',
     free: true,
-    authType: 'api-key',
+    authType: 'bearer',
   },
   openrouter: {
     name: 'OpenRouter (Free)',
