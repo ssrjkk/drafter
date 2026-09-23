@@ -67,7 +67,7 @@ test.describe('Command palette', () => {
     const palette = page.locator('input[placeholder="Type a command..."]');
     await expect(palette).toBeVisible({ timeout: 5000 });
 
-    await page.locator('.fixed.inset-0.bg-black\\/50').click({ force: true });
+    await page.locator('[data-testid="command-palette-backdrop"]').click({ position: { x: 10, y: 10 } });
     await expect(palette).not.toBeVisible({ timeout: 2000 });
   });
 
