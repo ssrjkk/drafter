@@ -94,8 +94,25 @@ describe('QaAgent', () => {
     const result = await agent.run('loop test', { maxIterations: 3 });
 
     expect(result.iterations).toBe(3);
-    expect(result.output).toContain('need more info');
+    // The raw ```tool {...}``` block must never be handed back as the QA
+    // deliverable — it used to be saved to `tasks.output` and exported.
+    expect(result.output).not.toContain('```tool');
+    expect(result.output).not.toContain('"name": "read_file"');
+    expect(result.output).toContain('without producing an answer');
     expect(mockAiService.executeWithRetry).toHaveBeenCalledTimes(3);
+  });
+
+  it('returns the last prose answer when the step limit is hit', async () => {
+    const agent = new QaAgent(mockCodebase , mockAiService );
+
+    mockAiService.executeWithRetry
+      .mockResolvedValueOnce({ success: true, output: 'Initial analysis of the module.' })
+      .mockResolvedValue({ success: true, output: '```tool\n{"name": "read_file", "input": {"path": "x.ts"}}\n```' });
+
+    const result = await agent.run('mixed loop test', { maxIterations: 2 });
+
+    expect(result.output).toContain('Initial analysis of the module.');
+    expect(result.output).not.toContain('```tool');
   });
 
   it('handles tool execution errors gracefully', async () => {

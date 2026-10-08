@@ -9,17 +9,47 @@ import initSqlJs from 'sql.js';
 import type { Database } from 'sql.js';
 import { DatabaseService } from '../lib/database';
 import { createStorageProvider } from '../lib/storage';
-import { runMigrations } from '../lib/migrations';
+import { runMigrations, getSchemaVersion, LATEST_SCHEMA_VERSION } from '../lib/migrations';
 import { arrayBufferToBase64, base64ToArrayBuffer } from '../lib/base64';
 import { ErrorService } from '../lib/errorService';
 import { ErrorCode, STORAGE_KEYS, LIMITS } from '../lib/constants';
 import type { Project } from '../types';
 import type { MemoryEntry } from '../types/memory';
 
+/**
+ * Snapshot taken *before* migrations run, so a schema upgrade that goes wrong
+ * is always recoverable. It lives in the same localStorage the previous
+ * (write-only) unload dump used, so it is short-lived rather than a permanent
+ * plaintext duplicate of the whole database.
+ */
+function writeRecoverySnapshot(data: Uint8Array): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.dbUnsaved, arrayBufferToBase64(data));
+  } catch {
+    // Quota exceeded or storage unavailable — migrations are still attempted.
+  }
+}
+
+function tryLoadRecoverySnapshot(): Uint8Array | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.dbUnsaved);
+    if (!raw) return null;
+    const bytes = new Uint8Array(base64ToArrayBuffer(raw));
+    return bytes.byteLength > 0 ? bytes : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearRecoverySnapshot(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.dbUnsaved);
+  } catch { /* storage unavailable */ }
+}
+
 export function useDatabase() {
   const [dbService, setDbService] = useState<DatabaseService | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [isDbReady, setIsDbReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [db, setDb] = useState<Database | null>(null);
@@ -35,7 +65,7 @@ export function useDatabase() {
     } catch (err) {
       const msg = `Failed to save database: ${err instanceof Error ? err.message : String(err)}`;
       setError(msg);
-      ErrorService.reportAsync('DB_SAVE', err);
+      ErrorService.reportAsync(ErrorCode.DB_SAVE, err);
     }
   }, [db]);
 
@@ -62,17 +92,15 @@ export function useDatabase() {
             database = new SQL.Database(savedData);
           } catch {
             corrupted = true;
-            try {
-              const backup = localStorage.getItem(STORAGE_KEYS.dbBackup);
-              if (backup) {
-                const bytes = new Uint8Array(base64ToArrayBuffer(backup));
+            const bytes = tryLoadRecoverySnapshot();
+            if (bytes) {
+              try {
                 database = new SQL.Database(bytes);
-                const exported = database.export();
-                await storage.save(exported);
-              } else {
+                await storage.save(database.export());
+              } catch {
                 database = new SQL.Database();
               }
-            } catch {
+            } else {
               database = new SQL.Database();
             }
           }
@@ -80,7 +108,21 @@ export function useDatabase() {
           database = new SQL.Database();
         }
 
-        const { applied, currentVersion } = runMigrations(database);
+        const needsMigration = getSchemaVersion(database) < LATEST_SCHEMA_VERSION;
+        if (needsMigration) writeRecoverySnapshot(database.export());
+
+        const { applied, currentVersion, error: migrationError } = runMigrations(database);
+
+        if (migrationError) {
+          // A half-applied schema is indistinguishable from an empty database
+          // to every query below, so it must be reported instead of swallowed.
+          const msg = `Database migration failed (schema v${currentVersion}): ${migrationError}. A pre-migration recovery snapshot was kept.`;
+          ErrorService.reportAsync(ErrorCode.DB_INIT, new Error(msg));
+          if (mounted) setError(msg);
+          return;
+        }
+
+        if (needsMigration) clearRecoverySnapshot();
 
         if (applied > 0) {
           const exported = database.export();
@@ -90,6 +132,7 @@ export function useDatabase() {
         const service = new DatabaseService(database, async () => {
           if (saveTimeout) clearTimeout(saveTimeout);
           saveTimeout = setTimeout(async () => {
+            saveTimeout = null;
             try {
               const exported = database.export();
               await storage.save(exported);
@@ -106,7 +149,7 @@ export function useDatabase() {
         setIsDbReady(true);
         setDbVersion(currentVersion);
         if (corrupted) {
-          setError('Database was corrupted — restored from backup. Some recent data may be missing.');
+          setError('Database was corrupted — restored from the last recovery snapshot. Some recent data may be missing.');
         }
         performance.mark('db:init:end');
         performance.measure('db:init', 'db:init:start', 'db:init:end');
@@ -114,29 +157,35 @@ export function useDatabase() {
         if (mounted) {
           const msg = err instanceof Error ? err.message : 'Unknown database error';
           setError(msg);
-          ErrorService.report('DB_INIT', msg, undefined, false);
+          ErrorService.report(ErrorCode.DB_INIT, msg, undefined, false);
         }
       }
     };
 
     initDb();
 
-    const handleBeforeUnload = () => {
-      const currentDb = dbRef.current;
-      if (currentDb) {
-        try {
-          const exported = currentDb.export();
-          const base64 = arrayBufferToBase64(exported.buffer);
-          localStorage.setItem(STORAGE_KEYS.dbUnsaved, base64);
-        } catch { /* best effort */ }
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
     return () => {
       mounted = false;
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (saveTimeout) clearTimeout(saveTimeout);
+      // Run the pending write instead of discarding it: clearing the timer
+      // silently dropped the user's last edit when the component unmounted.
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+        saveTimeout = null;
+        void (async () => {
+          try {
+            const current = dbRef.current;
+            if (!current) return;
+            const storage = await createStorageProvider();
+            await storage.save(current.export());
+          } catch (err) {
+            ErrorService.reportAsync(ErrorCode.DB_SAVE, err);
+          }
+        })();
+      }
+      // sql.js keeps the sqlite3 handle in a process-wide WASM heap; without
+      // close() every remount leaks a whole database.
+      try { dbRef.current?.close(); } catch { /* already closed */ }
+      dbRef.current = null;
     };
   }, []);
 
@@ -173,12 +222,11 @@ export function useDatabase() {
   const deleteProject = useCallback(async (id: number) => {
     if (!dbService || id <= 0) return;
     setProjects(prev => prev.filter(p => p.id !== id));
-    if (selectedProject === id) setSelectedProject(null);
     const success = await dbService.deleteProject(id);
     if (!success) {
       setProjects(dbService.getProjects());
     }
-  }, [dbService, selectedProject, setSelectedProject]);
+  }, [dbService]);
 
   const updateProjectMemory = useCallback((id: number, memory: string) => {
     if (!dbService || id <= 0) return;
@@ -228,8 +276,6 @@ export function useDatabase() {
     saveDb,
     dbService,
     projects,
-    selectedProject,
-    setSelectedProject,
     isDbReady,
     error,
     dbVersion,

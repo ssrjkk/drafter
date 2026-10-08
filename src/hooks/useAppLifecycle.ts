@@ -13,14 +13,18 @@ export function useAppLifecycle() {
   useEffect(() => {
     // Initialize global services
     KeyboardShortcuts.init();
-    telemetry.start();
     tabLock.init();
 
-    // Record app launch
-    telemetry.record('app_launch', {
-      userAgent: navigator.userAgent,
-      viewport: `${window.innerWidth}x${window.innerHeight}`,
-    });
+    // Opt-in telemetry: previously always on, with no way to disable it and
+    // no respect for `envConfig.monitoring.enabled`.
+    telemetry.restorePreference();
+    telemetry.start();
+
+    if (telemetry.isEnabled()) {
+      telemetry.record('app_launch', {
+        viewport: `${window.innerWidth}x${window.innerHeight}`,
+      });
+    }
 
     return () => {
       KeyboardShortcuts.destroy();

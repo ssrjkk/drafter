@@ -5,6 +5,7 @@
  */
 
 import { type AiProvider, PROVIDER_KEY_PATTERNS } from '../config/security';
+import { PROTOTYPE_POLLUTION_KEYS } from './constants';
 
 export interface ValidationResult {
   valid: boolean;
@@ -134,9 +135,12 @@ export function chunk<T>(array: T[], size: number): T[][] {
 }
 
 export function groupBy<T>(array: T[], keyFn: (item: T) => string): Record<string, T[]> {
-  const result: Record<string, T[]> = {};
+  // Null-prototype object: a caller-supplied key of `toString`/`constructor`
+  // otherwise shadows Object.prototype and breaks `Object.values(...)`.
+  const result: Record<string, T[]> = Object.create(null) as Record<string, T[]>;
   for (const item of array) {
     const key = keyFn(item);
+    if (PROTOTYPE_POLLUTION_KEYS.has(key)) continue;
     (result[key] ??= []).push(item);
   }
   return result;
@@ -171,9 +175,12 @@ export function generateId(prefix?: string): string {
 
 export function parseQueryParams(url: string): Record<string, string> {
   try {
-    const params: Record<string, string> = {};
+    // Null prototype so a `__proto__`/`constructor` query key cannot reach
+    // Object.prototype.
+    const params = Object.create(null) as Record<string, string>;
     const urlObj = new URL(url);
     urlObj.searchParams.forEach((value, key) => {
+      if (PROTOTYPE_POLLUTION_KEYS.has(key)) return;
       params[key] = value;
     });
     return params;
@@ -192,10 +199,15 @@ export function buildQueryParams(params: Record<string, string | number | boolea
   return searchParams.toString();
 }
 
+/**
+ * Absolute HTTP(S) URL check. `new URL()` alone accepts `javascript:`,
+ * `data:` and `file:`, which made this "validation" prove nothing — and the
+ * cloud-sync credential was then sent to whatever host was entered.
+ */
 export function isValidUrl(url: string): boolean {
   try {
-    new URL(url);
-    return true;
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
   } catch {
     return false;
   }

@@ -6,12 +6,13 @@
 
 import { arrayBufferToBase64, base64ToArrayBuffer } from './base64';
 import { ErrorService } from './errorService';
-import { ErrorCode, STORAGE_KEYS } from './constants';
+import { ErrorCode, STORAGE_KEYS, KDF } from './constants';
 
 const DB_NAME = 'drafter-db';
 const DB_VERSION = 1;
 const STORE_NAME = 'database';
-const DB_KEY = 'app-state';
+const DB_KEY = 'drafter-db-v1';
+const LS_SALT_KEY = 'drafter-ls-salt';
 
 async function getLsCryptoKey(): Promise<CryptoKey> {
   try {
@@ -25,9 +26,12 @@ async function getLsCryptoKey(): Promise<CryptoKey> {
   }
   const passphrase = crypto.getRandomValues(new Uint8Array(32));
   try {
-    localStorage.setItem(STORAGE_KEYS.lsPassphrase, arrayBufferToBase64(passphrase.buffer));
+    localStorage.setItem(STORAGE_KEYS.lsPassphrase, arrayBufferToBase64(passphrase));
   } catch {
-    // localStorage full or unavailable — ephemeral key
+    // Without a persisted passphrase a new key is minted on every call, so
+    // save() and load() can never round-trip. Fail loudly instead of silently
+    // losing the user's data on the next reload.
+    throw new Error('LocalStorage is unavailable: cannot persist the storage encryption key');
   }
   return crypto.subtle.importKey('raw', passphrase, 'PBKDF2', false, ['deriveKey']);
 }
@@ -36,10 +40,23 @@ function generateIv(): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(12));
 }
 
+/** Random per-install salt: a constant salt derives the same key everywhere. */
+function getLsSalt(): Uint8Array {
+  const existing = localStorage.getItem(LS_SALT_KEY);
+  if (existing) {
+    try {
+      const decoded = new Uint8Array(base64ToArrayBuffer(existing));
+      if (decoded.byteLength >= 16) return decoded;
+    } catch { /* regenerate below */ }
+  }
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  localStorage.setItem(LS_SALT_KEY, arrayBufferToBase64(salt));
+  return salt;
+}
+
 async function deriveLsAesKey(passphrase: CryptoKey): Promise<CryptoKey> {
-  const salt = new TextEncoder().encode('drafter-ls-salt');
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 100_000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: getLsSalt(), iterations: KDF.ITERATIONS, hash: KDF.HASH },
     passphrase,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -159,27 +176,30 @@ export class LocalStorageFallback implements StorageProvider {
   private readonly maxSize = 5 * 1024 * 1024;
 
   async save(data: Uint8Array): Promise<void> {
-    const base64Length = Math.ceil(data.length / 3) * 4;
-    const estimatedSize = base64Length + 16;
-    if (estimatedSize > this.maxSize) {
-      throw new Error(`Data too large: ${estimatedSize} bytes (max: ${this.maxSize})`);
-    }
-
     const passphrase = await getLsCryptoKey();
     const aesKey = await deriveLsAesKey(passphrase);
     const iv = generateIv();
-    const encrypted = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
-      aesKey,
-      data,
+    const encrypted = new Uint8Array(
+      await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aesKey, data),
     );
-    const combined = new Uint8Array(iv.length + new Uint8Array(encrypted).length);
+    const combined = new Uint8Array(iv.length + encrypted.length);
     combined.set(iv, 0);
-    combined.set(new Uint8Array(encrypted), iv.length);
+    combined.set(encrypted, iv.length);
+
+    const encoded = arrayBufferToBase64(combined);
+    // Check the *stored* size: base64 of (iv + ciphertext + GCM tag) is what
+    // actually has to fit, and it is always larger than the plaintext.
+    if (encoded.length > this.maxSize) {
+      throw new Error(`Data too large: ${encoded.length} bytes (max: ${this.maxSize})`);
+    }
+
     try {
-      localStorage.setItem(DB_KEY, arrayBufferToBase64(combined.buffer));
-    } catch {
-      ErrorService.reportAsync(ErrorCode.STORAGE_SAVE, 'LocalStorage write failed');
+      localStorage.setItem(DB_KEY, encoded);
+    } catch (err) {
+      // Swallowing this made every save look successful while nothing was
+      // written, so the user lost the session on reload.
+      ErrorService.reportAsync(ErrorCode.STORAGE_SAVE, err);
+      throw err;
     }
   }
 
@@ -191,7 +211,7 @@ export class LocalStorageFallback implements StorageProvider {
       return null;
     }
     if (!saved) return null;
-    
+
     try {
       const combined = base64ToArrayBuffer(saved);
       if (combined.byteLength < 12) return null;
@@ -199,11 +219,7 @@ export class LocalStorageFallback implements StorageProvider {
       const ciphertext = combined.slice(12);
       const passphrase = await getLsCryptoKey();
       const aesKey = await deriveLsAesKey(passphrase);
-      const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv },
-        aesKey,
-        ciphertext,
-      );
+      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, aesKey, ciphertext);
       return new Uint8Array(decrypted);
     } catch (err) {
       ErrorService.reportAsync(ErrorCode.DECRYPT, err);
@@ -229,31 +245,52 @@ export class LocalStorageFallback implements StorageProvider {
   }
 }
 
-export async function createStorageProvider(): Promise<StorageProvider> {
+/**
+ * The provider is a singleton: creating a new one per save opened a fresh
+ * IndexedDB connection each time (and leaked it), plus two extra open/delete
+ * cycles for the availability probe — on *every* repository write.
+ */
+let cachedProvider: Promise<StorageProvider> | null = null;
+
+export function createStorageProvider(): Promise<StorageProvider> {
+  if (cachedProvider) return cachedProvider;
+  cachedProvider = probeStorage().catch(err => {
+    // Do not memoise a failed probe: IndexedDB can recover (private-mode
+    // toggles, quota changes) and the user should not be stuck with a fallback.
+    cachedProvider = null;
+    throw err;
+  });
+  return cachedProvider;
+}
+
+async function probeStorage(): Promise<StorageProvider> {
   if (typeof indexedDB === 'undefined') {
     return new LocalStorageFallback();
   }
 
-  try {
-    const testDb = indexedDB.open('drafter-test', 1);
-    return new Promise((resolve) => {
-      testDb.onsuccess = () => {
-        const db = testDb.result;
-        db.close();
-        indexedDB.deleteDatabase('drafter-test');
-        resolve(new IndexedDBStorage());
-      };
-      testDb.onerror = () => {
-        indexedDB.deleteDatabase('drafter-test');
-        resolve(new LocalStorageFallback());
-      };
-      testDb.onblocked = () => {
-        indexedDB.deleteDatabase('drafter-test');
-        resolve(new LocalStorageFallback());
-      };
-    });
-  } catch {
-    if (import.meta.env.DEV) console.warn('[storage] Failed to probe IndexedDB');
-    return new LocalStorageFallback();
-  }
+  return new Promise<StorageProvider>((resolve) => {
+    let testDb: IDBOpenDBRequest;
+    try {
+      testDb = indexedDB.open('drafter-test', 1);
+    } catch {
+      resolve(new LocalStorageFallback());
+      return;
+    }
+    const fallback = () => {
+      try { indexedDB.deleteDatabase('drafter-test'); } catch { /* ignore */ }
+      resolve(new LocalStorageFallback());
+    };
+    testDb.onsuccess = () => {
+      testDb.result.close();
+      try { indexedDB.deleteDatabase('drafter-test'); } catch { /* ignore */ }
+      resolve(new IndexedDBStorage());
+    };
+    testDb.onerror = fallback;
+    testDb.onblocked = fallback;
+  });
+}
+
+/** Test seam: drop the memoised provider so a new probe runs. */
+export function resetStorageProvider(): void {
+  cachedProvider = null;
 }

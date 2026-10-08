@@ -65,9 +65,13 @@ export const LIMITS = {
   debounceContextErrorMs: 300,
   pollIntervalMs: 2000,
   autoSaveIntervalMs: 1000,
-  maxToolOutputChars: 2000,
-  maxAgentContextMessages: 6,
+maxToolOutputChars: 2000,
+maxAgentContextMessages: 6,
+/** Aggregate character budget for one agent turn, tool results included. */
+maxAgentPromptChars: 24_000,
   maxRetries: 3,
+  /** Hard deadline for a single provider request, so a stalled socket cannot wedge the UI. */
+  requestTimeoutMs: 180_000,
   toastDurationMs: 4000,
   retryBaseDelayMs: 1000,
   retryMaxDelayMs: 30000,
@@ -79,6 +83,20 @@ export const LIMITS = {
 } as const;
 
 export const PROTOTYPE_POLLUTION_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
+ * Single source of truth for key derivation. It was duplicated across the
+ * vault and the storage fallback, so it could not be raised consistently.
+ * OWASP's floor for PBKDF2-HMAC-SHA-256 is 600k iterations.
+ */
+export const KDF = {
+  NAME: 'PBKDF2',
+  HASH: 'SHA-256',
+  ITERATIONS: 600_000,
+  SALT_BYTES: 16,
+  IV_BYTES: 12,
+  KEY_BITS: 256,
+} as const;
 
 export const ErrorCode = {
   DB_INIT: 'DB_INIT',

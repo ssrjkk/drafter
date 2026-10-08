@@ -30,10 +30,22 @@ const CATEGORY_CONFIGS: CategoryConfig[] = [
   { category: 'custom', type: 'record', entryKey: '', confidence: 0.6 },
 ];
 
-function getConfig(category: MemoryCategory): CategoryConfig {
-  const cfg = CATEGORY_CONFIGS.find(c => c.category === category);
-  if (!cfg) throw new Error(`Unknown memory category: ${category}`);
-  return cfg;
+/** Known memory categories, exported so import paths can validate before persisting. */
+export const MEMORY_CATEGORIES: readonly MemoryCategory[] = CATEGORY_CONFIGS.map(c => c.category);
+
+export function isMemoryCategory(value: unknown): value is MemoryCategory {
+  return typeof value === 'string' && CATEGORY_CONFIGS.some(c => c.category === value);
+}
+
+/**
+ * Returns `null` for an unknown category instead of throwing. Rows reach this
+ * function straight from SQLite (and from import/share payloads), and the
+ * caller runs inside `useMemo` — a throw there unmounts the whole app via the
+ * root error boundary and the bad row stays in IndexedDB, so the app stays
+ * bricked until the user clears storage by hand.
+ */
+function findConfig(category: string): CategoryConfig | null {
+  return CATEGORY_CONFIGS.find(c => c.category === category) ?? null;
 }
 
 function emptyMemory(): StructuredMemory {
@@ -49,12 +61,23 @@ function emptyMemory(): StructuredMemory {
   };
 }
 
+/**
+ * Models routinely emit a bare string where a list is expected
+ * (`tech_stack: { react: "18.2" }`). Dropping it lost the value on a
+ * round-trip through import/export, so coerce instead.
+ */
+function coerceArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return [String(value)];
+  return [];
+}
+
 function validateStructuredMemory(raw: Record<string, unknown>): StructuredMemory {
   const result = emptyMemory();
 
   if (raw.tech_stack && typeof raw.tech_stack === 'object' && raw.tech_stack !== null) {
     result.tech_stack = Object.fromEntries(
-      safeObjectEntries(raw.tech_stack as Record<string, unknown>).map(([k, v]) => [k, Array.isArray(v) ? v.map(String) : []])
+      safeObjectEntries(raw.tech_stack as Record<string, unknown>).map(([k, v]) => [k, coerceArray(v)]),
     );
   }
 
@@ -149,18 +172,21 @@ export function entriesToMemory(entries: MemoryEntry[]): StructuredMemory {
   const memory = emptyMemory();
 
   for (const entry of entries) {
-    const cfg = getConfig(entry.category);
+    const cfg = findConfig(entry.category);
+    // Unknown categories are skipped, never fatal.
+    if (!cfg) continue;
+    if (PROTOTYPE_POLLUTION_KEYS.has(entry.key)) continue;
     switch (cfg.type) {
       case 'keyed_array': {
-        const bucket = memory[entry.category] as Record<string, string[]>;
+        const bucket = memory[cfg.category] as Record<string, string[]>;
         (bucket[entry.key] ??= []).push(entry.value);
         break;
       }
       case 'record':
-        (memory[entry.category] as Record<string, string>)[entry.key] = entry.value;
+        (memory[cfg.category] as Record<string, string>)[entry.key] = entry.value;
         break;
       case 'array':
-        (memory[entry.category] as string[]).push(entry.value);
+        (memory[cfg.category] as string[]).push(entry.value);
         break;
     }
   }
@@ -203,13 +229,14 @@ export function mergeMemories(existing: StructuredMemory, newMemory: Partial<Str
       const incoming = raw as Record<string, unknown>;
       for (const [k, items] of Object.entries(incoming)) {
         if (!Array.isArray(items)) continue;
-        const existing = bucket[k] ?? [];
-        const merged_arr = [...existing];
+        // Rename to avoid shadowing the `existing` parameter.
+        const current = bucket[k] ?? [];
+        const mergedArr = [...current];
         for (const item of items) {
           const s = String(item);
-          if (!merged_arr.includes(s)) merged_arr.push(s);
+          if (!mergedArr.includes(s)) mergedArr.push(s);
         }
-        bucket[k] = merged_arr;
+        bucket[k] = mergedArr;
       }
     } else if (cfg.type === 'record' && typeof raw === 'object' && raw !== null) {
       const target = merged[cfg.category] as Record<string, unknown>;

@@ -88,6 +88,19 @@ const MIGRATIONS: Migration[] = [
 
 const MIGRATION_TABLE = '_schema_migrations';
 
+/** Highest migration version in this build. */
+export const LATEST_SCHEMA_VERSION = MIGRATIONS.reduce((max, m) => Math.max(max, m.version), 0);
+
+/** Tables every build must end up with. */
+const REQUIRED_TABLES = ['projects', 'tasks', 'screenshots', 'conversation_history', 'memory_entries'];
+
+for (let i = 0; i < MIGRATIONS.length; i++) {
+  const expected = i + 1;
+  if (MIGRATIONS[i]!.version !== expected) {
+    throw new Error(`migrations: expected contiguous versions 1..${LATEST_SCHEMA_VERSION}`);
+  }
+}
+
 function ensureMigrationTable(db: Database): void {
   db.run(`CREATE TABLE IF NOT EXISTS ${MIGRATION_TABLE} (
     version INTEGER PRIMARY KEY,
@@ -103,6 +116,8 @@ function getAppliedVersions(db: Database): Set<number> {
     for (const row of result[0].values) {
       const v = row?.[0];
       if (typeof v === 'number') versions.add(v);
+      // SQLite may hand back TEXT for a hand-edited or foreign database.
+      else if (typeof v === 'string' && /^\d+$/.test(v)) versions.add(Number(v));
     }
   }
   return versions;
@@ -115,13 +130,34 @@ export function getSchemaVersion(db: Database): number {
   return Math.max(...versions);
 }
 
-export function runMigrations(db: Database): { applied: number; currentVersion: number } {
+/** Tables missing after a migration run — a non-empty list means a broken schema. */
+export function verifySchema(db: Database): string[] {
+  try {
+    const result = db.exec("SELECT name FROM sqlite_master WHERE type='table'");
+    const present = new Set<string>();
+    for (const row of result[0]?.values ?? []) {
+      if (typeof row[0] === 'string') present.add(row[0]);
+    }
+    return REQUIRED_TABLES.filter(t => !present.has(t));
+  } catch {
+    return [...REQUIRED_TABLES];
+  }
+}
+
+export interface MigrationResult {
+  applied: number;
+  currentVersion: number;
+  /** Non-null when a migration failed; the caller must surface it. */
+  error: string | null;
+}
+
+export function runMigrations(db: Database): MigrationResult {
   ensureMigrationTable(db);
-  const applied = getAppliedVersions(db);
+  const alreadyApplied = getAppliedVersions(db);
   let count = 0;
 
   for (const migration of MIGRATIONS) {
-    if (applied.has(migration.version)) continue;
+    if (alreadyApplied.has(migration.version)) continue;
 
     try {
       db.run('BEGIN TRANSACTION');
@@ -134,10 +170,20 @@ export function runMigrations(db: Database): { applied: number; currentVersion: 
       count++;
     } catch (err) {
       try { db.run('ROLLBACK'); } catch { /* ignore */ }
-      ErrorService.reportAsync(ErrorCode.DB_INIT, err);
-      break;
+      const message = err instanceof Error ? err.message : String(err);
+      ErrorService.reportAsync(ErrorCode.DB_INIT, err, { migration: migration.name });
+      // Previously this was swallowed with a recoverable report, so every read
+      // below silently returned "no data" on a half-migrated database.
+      return { applied: count, currentVersion: getSchemaVersion(db), error: `${migration.name}: ${message}` };
     }
   }
 
-  return { applied: count, currentVersion: getSchemaVersion(db) };
+  const missing = verifySchema(db);
+  if (missing.length > 0) {
+    const message = `missing tables: ${missing.join(', ')}`;
+    ErrorService.reportAsync(ErrorCode.DB_INIT, new Error(message));
+    return { applied: count, currentVersion: getSchemaVersion(db), error: message };
+  }
+
+  return { applied: count, currentVersion: getSchemaVersion(db), error: null };
 }

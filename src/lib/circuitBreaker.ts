@@ -60,6 +60,34 @@ export class CircuitBreaker {
     return this.state;
   }
 
+  /** Configured cooldown the caller has to honour while the circuit is OPEN. */
+  getResetTimeout(): number {
+    return this.config.resetTimeout;
+  }
+
+  /** Milliseconds left before an OPEN circuit accepts a probe again. */
+  getRemainingOpenTime(): number {
+    this.evaluateState();
+    if (this.state !== 'open') return 0;
+    return Math.max(0, this.config.resetTimeout - (Date.now() - this.lastStateChangeTime));
+  }
+
+  /**
+   * Record an outcome observed *outside* `execute()` — e.g. an `ApiResult`
+   * whose failure never surfaced as a thrown error. Without this the breaker
+   * can never observe a success and stays stuck in HALF_OPEN forever.
+   */
+  recordSuccess(): void {
+    this.totalRequests++;
+    this.onSuccess();
+  }
+
+  /** Record a failure observed outside `execute()`. */
+  recordFailure(): void {
+    this.totalRequests++;
+    this.onFailure();
+  }
+
   /** Read-only stats snapshot. */
   getStats(): Readonly<CircuitBreakerStats> {
     this.evaluateState();
@@ -104,6 +132,9 @@ export class CircuitBreaker {
     this.transitionTo('closed');
     this.failureCount = 0;
     this.successCount = 0;
+    this.totalRequests = 0;
+    this.lastFailureTime = 0;
+    this.lastStateChangeTime = Date.now();
   }
 
   private onSuccess(): void {
@@ -118,8 +149,10 @@ export class CircuitBreaker {
   private onFailure(): void {
     const now = Date.now();
 
-    // Reset counter if outside monitoring window
-    if (now - this.lastFailureTime > this.config.monitoringWindow) {
+    // Reset counter if outside monitoring window. lastFailureTime === 0 means
+    // "no failure recorded yet", not "one failure long ago" — skipping the
+    // reset there would silently raise the effective threshold.
+    if (this.lastFailureTime !== 0 && now - this.lastFailureTime > this.config.monitoringWindow) {
       this.failureCount = 0;
     }
 
@@ -157,11 +190,6 @@ export class CircuitBreaker {
     }
 
     this.config.onStateChange?.(oldState, newState);
-  }
-
-  private getRemainingOpenTime(): number {
-    const elapsed = Date.now() - this.lastStateChangeTime;
-    return Math.max(0, this.config.resetTimeout - elapsed);
   }
 }
 

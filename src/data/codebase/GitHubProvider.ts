@@ -7,7 +7,7 @@
 import type { CodebaseFile, CodebaseProvider, CodebaseSearchResult } from './CodebaseProvider';
 import { IGNORED_DIRS, IGNORED_FILES, CODE_EXTENSIONS } from './constants';
 import { ErrorService } from '../../lib/errorService';
-import { ErrorCode } from '../../lib/constants';
+import { ErrorCode, LIMITS } from '../../lib/constants';
 
 interface GitHubContentItem {
   name: string;
@@ -17,6 +17,10 @@ interface GitHubContentItem {
 }
 
 const MAX_CACHE_SIZE = 100;
+/** Ceiling on API calls per provider instance, so a large repo cannot burn the quota. */
+const MAX_API_REQUESTS = 400;
+/** Ceiling on the tree summary handed to the model as prompt context. */
+const MAX_STRUCTURE_LINES = 400;
 
 export class GitHubProvider implements CodebaseProvider {
   readonly name: string;
@@ -26,6 +30,7 @@ export class GitHubProvider implements CodebaseProvider {
   private token?: string;
   private treeCache: Map<string, CodebaseFile[]> = new Map();
   private fileCache: Map<string, string> = new Map();
+  private requestsMade = 0;
 
   private evictOldestEntry<K, V>(map: Map<K, V>): void {
     const firstKey = map.keys().next().value;
@@ -55,18 +60,53 @@ export class GitHubProvider implements CodebaseProvider {
     return headers;
   }
 
+  /**
+   * Reject `..`/absolute segments. `encodeURIComponent` does not encode dots,
+   * so a model-supplied path used to survive into the URL and be normalised
+   * server-side.
+   */
+  private safePath(path: string): string | null {
+    const normalised = path.replace(/\\/g, '/').replace(/^\/+/, '').trim();
+    // An empty path means the repository root.
+    if (!normalised) return '';
+    const parts = normalised.split('/').filter(p => p.length > 0 && p !== '.');
+    if (parts.length === 0) return '';
+    if (parts.some(p => p === '..')) return null;
+    return parts.join('/');
+  }
+
+  private async request(url: string, init?: RequestInit): Promise<Response> {
+    if (this.requestsMade >= MAX_API_REQUESTS) {
+      throw new Error('GitHub API request budget exhausted for this session');
+    }
+    this.requestsMade++;
+    return fetch(url, {
+      ...init,
+      headers: { ...this.getHeaders(), ...(init?.headers as Record<string, string> | undefined) },
+      signal: AbortSignal.timeout(15_000),
+    });
+  }
+
   async listTree(path = ''): Promise<CodebaseFile[]> {
     const cacheKey = path;
     if (this.treeCache.has(cacheKey)) {
       return this.treeCache.get(cacheKey)!;
     }
 
+    const safe = this.safePath(path);
+    if (safe === null) return [];
+
     try {
-      const url = `https://api.github.com/repos/${encodeURIComponent(this.owner)}/${encodeURIComponent(this.repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(this.branch)}`;
-      const response = await fetch(url, { headers: this.getHeaders() });
+      const url = `https://api.github.com/repos/${encodeURIComponent(this.owner)}/${encodeURIComponent(this.repo)}/contents/${safe.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(this.branch)}`;
+      const response = await this.request(url);
 
       if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.status}`);
+        ErrorService.reportAsync(
+          ErrorCode.API_REQUEST,
+          new Error(`GitHub listTree ${response.status}`),
+          { provider: 'github', operation: 'listTree', path, status: response.status },
+        );
+        return [];
       }
 
       const data: GitHubContentItem[] = await response.json();
@@ -106,23 +146,34 @@ export class GitHubProvider implements CodebaseProvider {
       return this.fileCache.get(path)!;
     }
 
+    const safe = this.safePath(path);
+    if (safe === null) return `// Error reading file: path traversal is not allowed (${path})`;
+
     try {
-      const url = `https://raw.githubusercontent.com/${encodeURIComponent(this.owner)}/${encodeURIComponent(this.repo)}/${encodeURIComponent(this.branch)}/${path.split('/').map(encodeURIComponent).join('/')}`;
-      const response = await fetch(url);
+      const encodedPath = safe.split('/').map(encodeURIComponent).join('/');
+      const response = await this.request(
+        `https://raw.githubusercontent.com/${encodeURIComponent(this.owner)}/${encodeURIComponent(this.repo)}/${encodeURIComponent(this.branch)}/${encodedPath}`,
+        // raw.githubusercontent.com ignores the GitHub API Accept header.
+        { headers: { Accept: 'text/plain' } },
+      );
 
       if (!response.ok) {
-        throw new Error(`Failed to read ${path}: ${response.status}`);
+        // Throwing keeps an error message from being presented as source code
+        // to the model (prompt poisoning via a 404 body).
+        throw new Error(`Failed to read ${safe}: HTTP ${response.status}`);
       }
 
       const text = await response.text();
 
-      if (text.length > 100_000) {
-        return `${text.slice(0, 100_000)}\n// ... truncated (file too large)`;
-      }
+      // Truncate *before* caching, otherwise the size cap provides no
+      // protection and the cache holds the full body.
+      const clipped = text.length > LIMITS.maxFileContentChars
+        ? `${text.slice(0, LIMITS.maxFileContentChars)}\n// ... truncated (file too large)`
+        : text;
 
       if (this.fileCache.size >= MAX_CACHE_SIZE) this.evictOldestEntry(this.fileCache);
-      this.fileCache.set(path, text);
-      return text;
+      this.fileCache.set(path, clipped);
+      return clipped;
     } catch (err) {
       return `// Error reading file: ${err instanceof Error ? err.message : String(err)}`;
     }
@@ -130,16 +181,22 @@ export class GitHubProvider implements CodebaseProvider {
 
   async searchCode(pattern: string, fileGlob?: string): Promise<CodebaseSearchResult[]> {
     try {
-      const sanitizedPattern = pattern.replace(/repo:|filename:/gi, '');
-      let query = `${sanitizedPattern} repo:${this.owner}/${this.repo}`;
-      if (fileGlob) query += ` filename:${fileGlob.replace(/repo:|filename:/gi, '')}`;
+      // Allow-list the qualifiers instead of stripping a deny-list: `org:`,
+      // `user:`, `org:`/`path:`/`language:` all broadened the query scope.
+      const stripQualifiers = (value: string): string =>
+        value.replace(/\b(repo|repo:|filename|org|user|language|path|in|size):/gi, ' ');
+
+      let query = `${stripQualifiers(pattern)} repo:${this.owner}/${this.repo}`;
+      if (fileGlob) query += ` filename:${stripQualifiers(fileGlob)}`;
 
       const url = `https://api.github.com/search/code?q=${encodeURIComponent(query)}&per_page=20`;
-      const response = await fetch(url, { headers: this.getHeaders() });
+      const response = await this.request(url, {
+        // Without this media type GitHub never returns `text_matches`, so
+        // every search result had empty content.
+        headers: { Accept: 'application/vnd.github.text-match+json' },
+      });
 
-      if (!response.ok) {
-        return [];
-      }
+      if (!response.ok) return [];
 
       const data = await response.json();
       return (data.items || []).map((item: { path: string; text_matches?: Array<{ fragment: string }> }) => ({
@@ -157,9 +214,10 @@ export class GitHubProvider implements CodebaseProvider {
     const lines: string[] = [`${this.name} (${this.branch})`, ''];
 
     const renderTree = async (path: string, prefix: string, depth: number): Promise<void> => {
-      if (depth > 3) return;
+      if (depth > 3 || lines.length >= MAX_STRUCTURE_LINES) return;
       const items = await this.listTree(path);
       for (const item of items) {
+        if (lines.length >= MAX_STRUCTURE_LINES) return;
         if (item.type === 'directory') {
           lines.push(`${prefix}${item.name}/`);
           await renderTree(item.path, prefix + '  ', depth + 1);
@@ -170,6 +228,9 @@ export class GitHubProvider implements CodebaseProvider {
     };
 
     await renderTree('', '', 0);
+    if (lines.length >= MAX_STRUCTURE_LINES) {
+      lines.push(`… truncated at ${MAX_STRUCTURE_LINES} entries`);
+    }
     return lines.join('\n');
   }
 

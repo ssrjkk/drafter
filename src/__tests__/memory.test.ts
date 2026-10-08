@@ -87,10 +87,18 @@ describe('parseMemoryExtraction()', () => {
     expect(result.tech_stack?.ts).toEqual(['strict', '42']);
   });
 
-  it('skips non-array tech_stack values', () => {
+  it('coerces a scalar tech_stack value into a single-element list', () => {
+    // Models routinely emit `"react": "18.2"`; dropping it lost the value on
+    // every import/export round-trip.
     const input = JSON.stringify({ tech_stack: { ts: 'not-an-array' } });
     const result = parseMemoryExtraction(input);
-    expect(result.tech_stack?.ts).toEqual([]);
+    expect(result.tech_stack?.ts).toEqual(['not-an-array']);
+  });
+
+  it('drops unusable tech_stack values', () => {
+    const input = JSON.stringify({ tech_stack: { bad: { nested: true } } });
+    const result = parseMemoryExtraction(input);
+    expect(result.tech_stack?.bad).toEqual([]);
   });
 });
 

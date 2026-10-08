@@ -7,13 +7,11 @@
 import { keyManager } from './keyManagement';
 import { arrayBufferToBase64, base64ToArrayBuffer } from './base64';
 import { ErrorService } from './errorService';
-import { ErrorCode, STORAGE_KEYS } from './constants';
+import { ErrorCode, STORAGE_KEYS, KDF } from './constants';
 
-const PBKDF2_ITERATIONS = 100000;
 const ENCRYPTION_ALGORITHM = 'AES-GCM';
-const KEY_LENGTH = 256;
-const IV_LENGTH = 12;
-const SALT_LENGTH = 16;
+const IV_LENGTH = KDF.IV_BYTES;
+const SALT_LENGTH = KDF.SALT_BYTES;
 const LEGACY_KEY_LENGTH = 32;
 
 function lsGetItem(key: string): string | null {
@@ -42,31 +40,39 @@ async function getOrCreateLegacyKey(): Promise<string> {
   const stored = lsGetItem(STORAGE_KEYS.legacyKey);
   if (stored) return stored;
   const randomBytes = crypto.getRandomValues(new Uint8Array(LEGACY_KEY_LENGTH));
-  const key = arrayBufferToBase64(randomBytes.buffer);
+  const key = arrayBufferToBase64(randomBytes);
   lsSetItem(STORAGE_KEYS.legacyKey, key);
   return key;
 }
 
+/**
+ * NOTE: this legacy path derives its key from `STORAGE_KEYS.legacyKey`, which
+ * is stored in plain `localStorage` right next to the ciphertext. It therefore
+ * provides obfuscation, not confidentiality, against anything that can read
+ * localStorage (any XSS, any extension, a shared machine). It exists only for
+ * installs that have not set a master password; new writes always go through
+ * the master-password vault.
+ */
 async function legacyDeriveKey(salt: Uint8Array): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const passphrase = await getOrCreateLegacyKey();
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
     encoder.encode(passphrase),
-    'PBKDF2',
+    KDF.NAME,
     false,
     ['deriveBits', 'deriveKey']
   );
 
   return crypto.subtle.deriveKey(
     {
-      name: 'PBKDF2',
+      name: KDF.NAME,
       salt: salt,
-      iterations: PBKDF2_ITERATIONS,
-      hash: 'SHA-256'
+      iterations: KDF.ITERATIONS,
+      hash: KDF.HASH
     },
     keyMaterial,
-    { name: ENCRYPTION_ALGORITHM, length: KEY_LENGTH },
+    { name: ENCRYPTION_ALGORITHM, length: KDF.KEY_BITS },
     false,
     ['encrypt', 'decrypt']
   );
@@ -123,8 +129,14 @@ export async function decryptApiKey(encryptedData: string): Promise<string | nul
   if (keyManager.isReady()) {
     try {
       return await keyManager.decryptApiKey(encryptedData);
-    } catch {
-      return legacyDecrypt(encryptedData);
+    } catch (err) {
+      // Only a *pre-vault* ciphertext may fall back. Previously every failure
+      // (wrong master password, tampered ciphertext) was swallowed and retried
+      // against the localStorage-resident legacy key.
+      const looksLegacy = await legacyDecrypt(encryptedData);
+      if (looksLegacy) return looksLegacy;
+      ErrorService.reportAsync(ErrorCode.DECRYPT, err);
+      return null;
     }
   }
   return legacyDecrypt(encryptedData);

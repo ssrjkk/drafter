@@ -29,8 +29,15 @@ describe('parseToolCall', () => {
     expect(parseToolCall(response)).toBeNull();
   });
 
-  it('returns null for missing input field', () => {
-    const response = '```tool\n{"name":"read_file"}\n```';
+  it('defaults a missing input field to an empty object', () => {
+    // `list_directory` legitimately takes no arguments, so an absent `input`
+    // must not be treated as an invalid call.
+    const response = '```tool\n{"name":"list_directory"}\n```';
+    expect(parseToolCall(response)).toEqual({ name: 'list_directory', input: {} });
+  });
+
+  it('rejects a non-object input field', () => {
+    const response = '```tool\n{"name":"read_file","input":"src/a.ts"}\n```';
     expect(parseToolCall(response)).toBeNull();
   });
 
@@ -68,14 +75,39 @@ describe('parseToolCall', () => {
     expect(parseToolCall(response)).toBeNull();
   });
 
-  it('extracts first tool call when multiple exist', () => {
+  it('uses the last tool call when multiple blocks exist', () => {
+    // A model often documents the format with an example before issuing the
+    // real call, so the final block is the current intent.
     const response = '```tool\n{"name":"first","input":{"x":1}}\n```\n\n```tool\n{"name":"second","input":{"y":2}}\n```';
     const result = parseToolCall(response);
-    expect(result!.name).toBe('first');
+    expect(result!.name).toBe('second');
+  });
+
+  it('parses a CRLF tool header', () => {
+    const response = '```tool\r\n{"name":"read_file","input":{"path":"src/index.ts"}}\r\n```';
+    expect(parseToolCall(response)).toEqual({ name: 'read_file', input: { path: 'src/index.ts' } });
+  });
+
+  it('parses the tool_call fence alias', () => {
+    const response = '```tool_call\n{"name":"read_file","input":{"path":"src/index.ts"}}\n```';
+    expect(parseToolCall(response)).toEqual({ name: 'read_file', input: { path: 'src/index.ts' } });
+  });
+
+  it('recovers a tool call truncated by the token limit', () => {
+    // Without this the raw JSON was shown to the user as the QA deliverable.
+    const response = '```tool\n{"name":"read_file","input":{"path":"src/very/long/path/to/a/file.ts"';
+    expect(parseToolCall(response)).toEqual({
+      name: 'read_file',
+      input: { path: 'src/very/long/path/to/a/file.ts' },
+    });
   });
 
   it('name must be a string (not number)', () => {
     const response = '```tool\n{"name":123,"input":{}}\n```';
     expect(parseToolCall(response)).toBeNull();
+  });
+
+  it('returns null for an empty input array', () => {
+    expect(parseToolCall('[]')).toBeNull();
   });
 });

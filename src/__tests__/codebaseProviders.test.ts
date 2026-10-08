@@ -269,7 +269,7 @@ describe('GitHubProvider', () => {
     expect(result).toEqual([]);
   });
 
-  it('readFile fetches from raw.githubusercontent.com', async () => {
+  it('readFile fetches from raw.githubusercontent.com with auth headers', async () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: true,
       text: () => Promise.resolve('file content here'),
@@ -278,7 +278,18 @@ describe('GitHubProvider', () => {
     expect(content).toBe('file content here');
     expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining('raw.githubusercontent.com'),
+      // The Authorization header used to be dropped, so private repos always
+      // 404'd and the error body was fed to the model as if it were source.
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'token token123' }),
+      }),
     );
+  });
+
+  it('readFile rejects path traversal', async () => {
+    const content = await provider.readFile('../../../etc/passwd');
+    expect(content).toContain('path traversal');
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
   it('readFile truncates large files', async () => {

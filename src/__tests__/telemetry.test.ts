@@ -8,6 +8,8 @@ import { telemetry } from '../lib/telemetry';
 describe('TelemetryBuffer', () => {
   beforeEach(() => {
     telemetry.clear();
+    // Telemetry is opt-in now, so every behaviour test must opt in first.
+    telemetry.setEnabled(true);
     vi.useFakeTimers();
     globalThis.fetch = vi.fn().mockResolvedValue({ ok: true });
   });
@@ -15,8 +17,40 @@ describe('TelemetryBuffer', () => {
   afterEach(() => {
     telemetry.stop();
     telemetry.clear();
+    telemetry.setEnabled(false);
     vi.useRealTimers();
     vi.restoreAllMocks();
+  });
+
+  it('records nothing while disabled', () => {
+    telemetry.setEnabled(false);
+    telemetry.record('ignored_event');
+    expect(telemetry.getBufferSize()).toBe(0);
+  });
+
+  it('persists and restores the consent choice', () => {
+    telemetry.setEnabled(true);
+    telemetry.restorePreference();
+    expect(telemetry.isEnabled()).toBe(true);
+
+    telemetry.setEnabled(false);
+    telemetry.restorePreference();
+    expect(telemetry.isEnabled()).toBe(false);
+  });
+
+  it('drops buffered events when consent is withdrawn', () => {
+    telemetry.record('queued');
+    expect(telemetry.getBufferSize()).toBe(1);
+    telemetry.setEnabled(false);
+    expect(telemetry.getBufferSize()).toBe(0);
+  });
+
+  it('does not start an interval without consent', () => {
+    telemetry.setEnabled(false);
+    telemetry.stop(); // clears any interval from a previous test
+    telemetry.record('nope');
+    vi.advanceTimersByTime(60_000);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
   it('records events', () => {

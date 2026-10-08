@@ -157,22 +157,29 @@ class UnifiedAiServiceImpl implements UnifiedAiService {
     return service;
   }
 
-  private async syncServiceConfig(provider: AiProvider): Promise<void> {
-    const svc = this.services.get(provider);
-    if (!svc) return;
-    if (typeof svc.setApiKey === 'function') {
-      svc.setApiKey(this.currentApiKey);
+  /**
+   * Apply the current key/model to a service instance.
+   *
+   * Must run *after* `ensureService`, otherwise the very first request for a
+   * freshly imported provider reaches the network with the placeholder key the
+   * service was constructed with.
+   */
+  private syncServiceConfig(service: LazyService): void {
+    if (typeof service.setApiKey === 'function') {
+      service.setApiKey(this.currentApiKey);
     }
   }
 
   setProvider(provider: AiProvider, apiKey?: string, model?: string): void {
     this.currentProvider = provider;
-    if (apiKey) this.currentApiKey = apiKey;
+    // Always assign, even for '' — keeping the previous provider's key here
+    // would ship it to a different origin on the next request.
+    this.currentApiKey = apiKey ?? '';
     const resolvedModel = model ?? getDefaultModelForProvider(provider).id;
     const svc = this.services.get(provider);
     if (svc) {
-      if (typeof svc.setApiKey === 'function' && apiKey) {
-        svc.setApiKey(apiKey);
+      if (typeof svc.setApiKey === 'function') {
+        svc.setApiKey(this.currentApiKey);
       }
       svc.setModel(resolvedModel);
     }
@@ -204,8 +211,7 @@ class UnifiedAiServiceImpl implements UnifiedAiService {
   private checkCircuitBreaker(): ApiResult | null {
     const cb = this.circuitBreakers.get(this.currentProvider);
     if (cb && cb.getState() === 'open') {
-      const stats = cb.getStats();
-      const remainingMs = 60000 - (Date.now() - stats.lastStateChangeTime);
+      const remainingMs = cb.getRemainingOpenTime();
       return {
         success: false,
         error: `Service temporarily unavailable (circuit breaker open). Retry in ${Math.ceil(remainingMs / 1000)}s.`,
@@ -214,11 +220,23 @@ class UnifiedAiServiceImpl implements UnifiedAiService {
     return null;
   }
 
+  /**
+   * Failures that must never trip the breaker: user cancellation, being
+   * offline, a bad/missing key and the breaker's own rejection. Counting them
+   * locks the provider for the whole reset timeout after three Cancel clicks.
+   */
+  private static readonly NON_BREAKER_FAILURES =
+    /abort|cancel|superseded|circuit breaker|api key|invalid[_ ]?api[_ ]?key|invalid x-api-key|unauthorized|401|403|no internet|offline|network|timed? ?out/i;
+
   private recordCircuitBreakerResult(result: ApiResult, cb: CircuitBreaker | undefined): void {
     if (!cb) return;
-    if (!result.success && result.error && !result.error.includes('API key') && !result.error.includes('circuit breaker')) {
-      cb.execute(() => Promise.reject(new Error(result.error))).catch(() => {});
+    if (result.success) {
+      cb.recordSuccess();
+      return;
     }
+    if (!result.error) return;
+    if (UnifiedAiServiceImpl.NON_BREAKER_FAILURES.test(result.error)) return;
+    cb.recordFailure();
   }
 
   private getApiKeyError(): string | null {
@@ -231,23 +249,31 @@ class UnifiedAiServiceImpl implements UnifiedAiService {
     return err ? { success: false, error: err } : null;
   }
 
-  private buildExecuteOpts(options: {
-    systemPrompt: string;
-    userMessage: string;
-    screenshotBase64?: string | null;
-    signal?: AbortSignal;
-    taskType?: string;
-    onChunk?: (text: string) => void;
-  }): Parameters<LazyService['execute']>[0] {
-    return this.currentProvider === 'claude'
-      ? { apiKey: this.currentApiKey, ...options }
-      : { ...options };
+  private buildExecuteOpts<T extends { apiKey?: string }>(options: T): T {
+    // The key always travels with the request: providers are constructed with
+    // a placeholder key and only `setApiKey` fills in the real one. Injecting
+    // it here (instead of only for Claude) is what makes the first request
+    // after a provider switch succeed. Caller-supplied keys are deliberately
+    // dropped — a stale store key must never override the configured one.
+    const rest = { ...options };
+    delete rest.apiKey;
+    return { ...rest, apiKey: this.currentApiKey } as T;
   }
 
-  private async dispatchExecute(method: 'execute' | 'executeWithRetry', opts: Parameters<LazyService[typeof method]>[0]): Promise<ApiResult> {
-    const service = await this.ensureService(this.currentProvider);
+  private async dispatchExecute(
+    method: 'execute' | 'executeWithRetry',
+    options: Parameters<LazyService[typeof method]>[0],
+  ): Promise<ApiResult> {
+    const provider = this.currentProvider;
+    const service = await this.ensureService(provider);
+    this.syncServiceConfig(service);
+    // The provider may have switched while the dynamic import was in flight;
+    // never send the previous provider's key to the new provider's origin.
+    if (provider !== this.currentProvider) {
+      return { success: false, error: 'Request superseded: provider changed' };
+    }
     try {
-      return await service[method](opts);
+      return await service[method](this.buildExecuteOpts(options));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return { success: false, error: msg };
@@ -262,27 +288,7 @@ class UnifiedAiServiceImpl implements UnifiedAiService {
     taskType?: string;
     onChunk?: (text: string) => void;
   }): Promise<ApiResult> {
-    const cbCheck = this.checkCircuitBreaker();
-    if (cbCheck) return cbCheck;
-
-    const keyErr = this.ensureApiKey();
-    if (keyErr) return keyErr;
-
-    await this.syncServiceConfig(this.currentProvider);
-    const cb = this.circuitBreakers.get(this.currentProvider);
-    const opts = this.buildExecuteOpts(options);
-
-    let result: ApiResult;
-    try {
-      result = await this.dispatchExecute('execute', opts);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      cb?.execute(() => Promise.reject(new Error(msg))).catch(() => {});
-      return { success: false, error: msg };
-    }
-
-    this.recordCircuitBreakerResult(result, cb);
-    return result;
+    return this.run('execute', options);
   }
 
   async executeWithRetry(options: {
@@ -295,32 +301,31 @@ class UnifiedAiServiceImpl implements UnifiedAiService {
     onRetryAttempt?: (attempt: number, delay: number, error: string) => void;
     onChunk?: (text: string) => void;
   }): Promise<ApiResult> {
+    return this.run('executeWithRetry', options);
+  }
+
+  private async run(
+    method: 'execute' | 'executeWithRetry',
+    options: Parameters<LazyService[typeof method]>[0],
+  ): Promise<ApiResult> {
     const cbCheck = this.checkCircuitBreaker();
     if (cbCheck) return cbCheck;
 
     const keyErr = this.ensureApiKey();
     if (keyErr) return keyErr;
 
-    await this.syncServiceConfig(this.currentProvider);
     const cb = this.circuitBreakers.get(this.currentProvider);
-    const opts = this.buildExecuteOpts(options);
-
-    let result: ApiResult;
-    try {
-      result = await this.dispatchExecute('executeWithRetry', opts);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      cb?.execute(() => Promise.reject(new Error(msg))).catch(() => {});
-      return { success: false, error: msg };
-    }
-
+    const result = await this.dispatchExecute(method, options);
     this.recordCircuitBreakerResult(result, cb);
     return result;
   }
 
   abort(): void {
-    const svc = this.services.get(this.currentProvider);
-    if (svc) svc.abort();
+    // Abort every cached service, not just the active one: an agent run keeps
+    // using the provider it started with even after the user switches.
+    for (const svc of this.services.values()) {
+      svc.abort();
+    }
   }
 }
 

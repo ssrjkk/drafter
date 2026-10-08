@@ -10,6 +10,9 @@ type NestedMessages = Record<string, string | Record<string, string | Record<str
 
 export type Locale = 'en' | 'ru' | 'uk';
 
+/** Exported for the key-coverage test: comparing locales needs the raw tables. */
+export { messages };
+
 const messages: Record<Locale, NestedMessages> = {
   en: {
     app: {
@@ -952,18 +955,29 @@ function getNestedValue(obj: NestedMessages, path: string): string | undefined {
   return undefined;
 }
 
-export function t(key: string, params?: Record<string, string>): string {
+export function t(key: string, params?: Record<string, string | number>): string {
   const value = getNestedValue(messages[currentLocale], key)
     ?? getNestedValue(messages.en, key)
     ?? key;
   if (!params) return value;
-  return value.replace(/\{\{(\w+)\}\}/g, (_, name) => params[name] || `{{${name}}}`);
+  // `params[name] || fallback` rendered the raw placeholder for legitimate
+  // falsy values such as 0 or ''.
+  return value.replace(/\{\{(\w+)\}\}/g, (_, name: string) =>
+    name in params ? String(params[name]) : `{{${name}}}`,
+  );
+}
+
+/** Raw lookup without the English fallback — used by the coverage test. */
+export function hasTranslation(key: string, locale: Locale): boolean {
+  return getNestedValue(messages[locale], key) !== undefined;
 }
 
 export function setLocale(locale: Locale): void {
   currentLocale = locale;
   if (typeof document !== 'undefined') {
     document.documentElement.lang = locale;
+    // Without this an RTL locale would render every layout broken.
+    document.documentElement.dir = RTL_LOCALES.has(locale) ? 'rtl' : 'ltr';
   }
 }
 
@@ -992,8 +1006,12 @@ export function saveLocale(locale: Locale): void {
   try { localStorage.setItem(STORAGE_KEYS.locale, locale); } catch { /* storage unavailable */ }
 }
 
+/** Locales that require right-to-left layout, for when one is added. */
+const RTL_LOCALES = new Set<string>(['ar', 'he', 'fa', 'ur']);
+
+/** Own properties only — `'toString' in messages` was true via the prototype. */
 function isValidLocale(value: string): value is Locale {
-  return value in messages;
+  return (AVAILABLE_LOCALES as string[]).includes(value);
 }
 
 export type { Locale as SupportedLocale };

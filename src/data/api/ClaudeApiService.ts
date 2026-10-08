@@ -4,27 +4,44 @@
  * @author ssrjkk
  */
 
-import { ApiConfig, ApiResult, ClaudeContentBlock } from './types';
+import type { ApiConfig, ApiResult, ClaudeContentBlock } from './types';
 import { RateLimiter } from '../../lib/rateLimiter';
 import { metricsCollector } from '../../lib/metrics';
 import { LIMITS } from '../../lib/constants';
+import {
+  ABORT_ERROR,
+  SSE_DONE,
+  SseParser,
+  combineSignals,
+  delay,
+  redactSecrets,
+  withTimeoutSignal,
+} from './requestUtils';
 
-export interface ClaudeApiServiceOptions {
-  config: ApiConfig;
-  onChunk?: (text: string) => void;
-  onError?: (error: string) => void;
-  signal?: AbortSignal;
+/** Everything a single attempt needs to report back to the retry loop. */
+interface AttemptFailure {
+  message: string;
+  status?: number;
+  retryAfterMs?: number;
+  aborted: boolean;
+  /** `offline` and `unknown` must not be retried. */
+  retryable: boolean;
 }
 
-interface RetryableError {
-  type: 'network' | 'rate_limit' | 'server_error' | 'unknown';
-  message: string;
-  retryAfter?: number;
+export interface ClaudeExecuteOptions {
+  apiKey?: string;
+  systemPrompt: string;
+  userMessage: string;
+  screenshotBase64?: string | null;
+  signal?: AbortSignal;
+  taskType?: string;
+  onChunk?: (text: string) => void;
 }
 
 export class ClaudeApiService {
   private config: ApiConfig;
   private requestId = 0;
+  private abortController: AbortController | null = null;
 
   constructor(config: ApiConfig) {
     this.config = config;
@@ -34,237 +51,264 @@ export class ClaudeApiService {
     this.config = { ...this.config, model };
   }
 
-  private getRetryableError(error: Error): RetryableError {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      return { type: 'network', message: 'No internet connection' };
+  /**
+   * Cancellation must actually stop the HTTP request. Bumping `requestId`
+   * alone left Anthropic streaming (and billing) until the socket closed.
+   */
+  abort(): void {
+    this.requestId++;
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
     }
+  }
 
-    const msg = error.message;
-    const statusMatch = msg.match(/(?:failed|error).*?:\s*(\d{3})/i) || msg.match(/\b(429|5\d{2})\b/);
+  private isOffline(): boolean {
+    // Only an explicit `false` means offline — `navigator.onLine` is not
+    // defined in every environment.
+    return typeof navigator !== 'undefined' && navigator.onLine === false;
+  }
 
-    if (statusMatch?.[1]) {
-      const status = parseInt(statusMatch[1]);
-      if (status === 429) {
-        const resetAfter = msg.match(/retry-after:\s*(\d+)/i)?.[1];
-        return { type: 'rate_limit', message: 'API rate limit exceeded', retryAfter: resetAfter ? parseInt(resetAfter) : 5 };
-      }
-      if (status >= 500 && status <= 504) {
-        return { type: 'server_error', message: `Server error: ${status}` };
-      }
+  private preflight(apiKey: string | undefined): string | null {
+    if (!apiKey) return 'API key is required';
+    if (this.isOffline()) return 'No internet connection';
+    if (!RateLimiter.consumeSlot()) {
+      return `Rate limit exceeded. Please wait ${RateLimiter.getResetTime()} seconds.`;
     }
+    return null;
+  }
 
-    if (msg.includes('fetch') || msg.includes('network')) {
-      return { type: 'network', message: msg };
+  private static parseRetryAfter(header: string | null | undefined): number | undefined {
+    if (!header) return undefined;
+    const seconds = Number(header.trim());
+    if (Number.isFinite(seconds) && seconds > 0) return seconds * 1000;
+    const date = Date.parse(header);
+    if (Number.isFinite(date)) return Math.max(0, date - Date.now());
+    return undefined;
+  }
+
+  /** Retry only what is worth retrying; HTTP status beats message guessing. */
+  private classify(status: number | undefined, message: string): { retryable: boolean } {
+    if (this.isOffline()) return { retryable: false };
+    if (typeof status === 'number') {
+      if (status === 429) return { retryable: true };
+      if (status >= 500) return { retryable: true };
+      return { retryable: false };
     }
-
-    return { type: 'unknown', message: msg };
+    const lower = message.toLowerCase();
+    return { retryable: ['overloaded', 'fetch', 'network', 'timeout', 'econnreset', 'ECONNRESET'].some(t => lower.includes(t)) };
   }
 
   private calculateBackoff(attempt: number): number {
-    const delay = Math.min(LIMITS.retryBaseDelayMs * Math.pow(2, attempt), LIMITS.retryMaxDelayMs);
+    const delayMs = Math.min(LIMITS.retryBaseDelayMs * Math.pow(2, attempt), LIMITS.retryMaxDelayMs);
     const array = new Uint32Array(1);
     crypto.getRandomValues(array);
-    const jitter = delay * LIMITS.retryJitterFactor * ((array[0]! / 0xFFFFFFFF) * 2 - 1);
-    return Math.round(delay + jitter);
+    const jitter = delayMs * LIMITS.retryJitterFactor * ((array[0]! / 0xFFFFFFFF) * 2 - 1);
+    return Math.round(delayMs + jitter);
   }
 
-  async execute(options: {
-    apiKey: string;
-    systemPrompt: string;
-    userMessage: string;
-    screenshotBase64?: string | null;
-    signal?: AbortSignal;
-    taskType?: string;
-    onChunk?: (text: string) => void;
-  }): Promise<ApiResult> {
-    const { apiKey, systemPrompt, userMessage, screenshotBase64, signal, taskType, onChunk } = options;
+  private async attempt(options: ClaudeExecuteOptions, apiKey: string, requestId: number, signal: AbortSignal): Promise<AttemptFailure | ApiResult> {
+    const { systemPrompt, userMessage, screenshotBase64, taskType, onChunk } = options;
     const startTime = Date.now();
+    const label = taskType || 'claude';
 
-    if (!apiKey) {
-      return { success: false, error: 'API key is required' };
+    const messages: { role: 'user' | 'assistant'; content: string | ClaudeContentBlock[] }[] = [
+      { role: 'user', content: userMessage },
+    ];
+    if (screenshotBase64) {
+      messages[0]!.content = [
+        { type: 'image', source: { type: 'base64', media_type: 'image/png', data: screenshotBase64 } },
+        { type: 'text', text: userMessage },
+      ];
     }
 
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      return { success: false, error: 'No internet connection' };
-    }
-
-    if (!RateLimiter.consumeSlot()) {
-      const resetIn = RateLimiter.getResetTime();
-      return { success: false, error: `Rate limit exceeded. Please wait ${resetIn} seconds.` };
-    }
-
-    const currentRequestId = ++this.requestId;
+    const requestBody: Record<string, unknown> = {
+      model: this.config.model,
+      max_tokens: this.config.maxTokens,
+      system: systemPrompt,
+      messages,
+      stream: true,
+    };
 
     let fullResponse = '';
     let outputTokens = 0;
     let inputTokens = 0;
 
+    const timeout = withTimeoutSignal([signal], LIMITS.requestTimeoutMs);
     try {
-      const messages: { role: 'user' | 'assistant'; content: string | ClaudeContentBlock[] }[] = [
-        { role: 'user', content: userMessage }
-      ];
-
-      if (screenshotBase64) {
-        const firstMsg = messages[0]!;
-        firstMsg.content = [
-          { type: 'image', source: { type: 'base64', media_type: 'image/png', data: screenshotBase64 } },
-          { type: 'text', text: userMessage }
-        ];
-      }
-
-      const requestBody: Record<string, unknown> = {
-        model: this.config.model,
-        max_tokens: this.config.maxTokens,
-        system: systemPrompt,
-        messages: messages,
-        stream: true,
-      };
-
       const response = await fetch(this.config.baseUrl, {
         method: 'POST',
         headers: {
           'x-api-key': apiKey,
           'anthropic-version': this.config.anthropicVersion || '2023-06-01',
-          'content-type': 'application/json'
+          'content-type': 'application/json',
         },
         body: JSON.stringify(requestBody),
-        signal
+        signal: combineSignals([signal, timeout.signal]),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const msg = errorData.error?.message || `API request failed: ${response.status}`;
-        throw Object.assign(new Error(msg), { status: response.status });
+        const errorData: unknown = await response.json().catch(() => null);
+        const providerMessage =
+          typeof (errorData as { error?: { message?: unknown } } | null)?.error?.message === 'string'
+            ? (errorData as { error: { message: string } }).error.message
+            : null;
+        const message = redactSecrets(providerMessage || `API request failed: ${response.status}`);
+        metricsCollector.recordRequest(label, false, 0, Date.now() - startTime);
+        return {
+          message,
+          status: response.status,
+          retryAfterMs: ClaudeApiService.parseRetryAfter(response.headers?.get?.('retry-after')),
+          aborted: false,
+          retryable: this.classify(response.status, message).retryable,
+        };
       }
 
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('No response body');
+      if (!response.body) {
+        metricsCollector.recordRequest(label, false, 0, Date.now() - startTime);
+        return { message: 'No response body', aborted: false, retryable: false };
       }
 
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let lineBuffer = '';
+      const parser = new SseParser();
+      let completed = false;
+      let streamError: string | null = null;
+      let stoppedForMaxTokens = false;
 
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done || currentRequestId !== this.requestId) {
-            if (!done && currentRequestId !== this.requestId) {
-              await reader.cancel().catch(() => {});
-            }
-            break;
-          }
-
-          lineBuffer += decoder.decode(value, { stream: true });
-          const lines = lineBuffer.split('\n');
-          lineBuffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-                fullResponse += parsed.delta.text;
-                onChunk?.(parsed.delta.text);
-              }
-              if (parsed.type === 'message_start' && parsed.message?.usage) {
-                inputTokens = parsed.message.usage.input_tokens ?? 0;
-              }
-              if (parsed.type === 'message_delta') {
-                if (parsed.usage?.output_tokens) outputTokens = parsed.usage.output_tokens;
-              }
-            } catch { /* malformed SSE chunk, skip */ }
-          }
+      const consume = (payload: string): void => {
+        if (payload === SSE_DONE) {
+          completed = true;
+          return;
         }
-      } finally {
-        reader.releaseLock();
-      }
+        if (!payload) return;
+        try {
+          const parsed = JSON.parse(payload) as {
+            type?: string;
+            delta?: { text?: string; stop_reason?: string | null };
+            message?: { usage?: { input_tokens?: number } };
+            usage?: { output_tokens?: number };
+            error?: { type?: string; message?: string };
+          };
 
-      const responseTime = Date.now() - startTime;
-      metricsCollector.recordRequest(taskType || 'unknown', true, outputTokens, responseTime);
-
-      return {
-        success: true,
-        output: fullResponse,
-        usage: { outputTokens, inputTokens }
+          // Anthropic can fail *mid-stream*; treating the error frame as an
+          // unknown chunk returned a truncated answer as a complete success.
+          if (parsed.type === 'error') {
+            streamError = redactSecrets(parsed.error?.message || parsed.error?.type || 'Stream error');
+            return;
+          }
+          if (parsed.type === 'content_block_delta' && typeof parsed.delta?.text === 'string') {
+            fullResponse += parsed.delta.text;
+            onChunk?.(parsed.delta.text);
+          }
+          if (parsed.delta?.stop_reason === 'max_tokens') stoppedForMaxTokens = true;
+          if (parsed.type === 'message_start' && parsed.message?.usage) {
+            inputTokens = parsed.message.usage.input_tokens ?? 0;
+          }
+          if (parsed.type === 'message_delta' && parsed.usage?.output_tokens) {
+            outputTokens = parsed.usage.output_tokens;
+          }
+        } catch {
+          /* malformed SSE chunk, skip */
+        }
       };
 
+      try {
+        while (!completed && !streamError) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (requestId !== this.requestId) {
+            await reader.cancel().catch(() => {});
+            return { message: ABORT_ERROR, aborted: true, retryable: false };
+          }
+          for (const frame of parser.push(decoder.decode(value, { stream: true }))) {
+            consume(frame.data);
+          }
+        }
+        if (!streamError) {
+          for (const frame of parser.flush()) consume(frame.data);
+        }
+      } finally {
+        try { reader.releaseLock(); } catch { /* already released after cancel */ }
+      }
+
+      if (streamError) {
+        metricsCollector.recordRequest(label, false, 0, Date.now() - startTime);
+        const message = streamError as string;
+        return { message, aborted: false, retryable: this.classify(undefined, message).retryable };
+      }
+      if (requestId !== this.requestId) {
+        return { message: ABORT_ERROR, aborted: true, retryable: false };
+      }
+
+      const responseTime = Date.now() - startTime;
+      if (fullResponse.length === 0) {
+        metricsCollector.recordRequest(label, false, 0, responseTime);
+        return { message: 'No response from model', aborted: false, retryable: true };
+      }
+
+      metricsCollector.recordRequest(label, true, outputTokens, responseTime);
+      const output = stoppedForMaxTokens ? `${fullResponse}\n\n[Truncated: the model hit its token limit.]` : fullResponse;
+      return { success: true, output, usage: { outputTokens, inputTokens } };
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      const responseTime = Date.now() - startTime;
-      
-      if (error.name === 'AbortError') {
-        metricsCollector.recordRequest(taskType || 'unknown', false, 0, responseTime);
-        return { success: false, error: 'Request aborted' };
-      }
-
-      metricsCollector.recordRequest(taskType || 'unknown', false, 0, responseTime);
-      return { success: false, error: error.message || 'An error occurred' };
+      const aborted = error.name === 'AbortError' || signal.aborted || requestId !== this.requestId;
+      metricsCollector.recordRequest(label, false, 0, Date.now() - startTime);
+      if (aborted) return { message: ABORT_ERROR, aborted: true, retryable: false };
+      const message = redactSecrets(error.message || 'Request failed');
+      return { message, aborted: false, retryable: this.classify(undefined, message).retryable };
+    } finally {
+      timeout.dispose();
     }
   }
 
-  async executeWithRetry(
-    options: {
-      apiKey: string;
-      systemPrompt: string;
-      userMessage: string;
-      screenshotBase64?: string | null;
-      taskType?: string;
-      maxRetries?: number;
-      signal?: AbortSignal;
-      onRetryAttempt?: (attempt: number, delay: number, error: string) => void;
-      onChunk?: (text: string) => void;
-    }
-  ): Promise<ApiResult> {
-    const maxRetries = options.maxRetries ?? 3;
-    let lastError: string = '';
+  async execute(options: ClaudeExecuteOptions): Promise<ApiResult> {
+    const apiKey = options.apiKey;
+    const guard = this.preflight(apiKey);
+    if (guard) return { success: false, error: guard };
+
+    this.abortController?.abort();
+    const controller = new AbortController();
+    this.abortController = controller;
+    const requestId = ++this.requestId;
+
+    const outcome = await this.attempt(options, apiKey!, requestId, combineSignals([options.signal, controller.signal]));
+    if ('success' in outcome) return outcome;
+    return { success: false, error: outcome.message };
+  }
+
+  async executeWithRetry(options: ClaudeExecuteOptions & {
+    maxRetries?: number;
+    onRetryAttempt?: (attempt: number, delay: number, error: string) => void;
+  }): Promise<ApiResult> {
+    const apiKey = options.apiKey;
+    const guard = this.preflight(apiKey);
+    if (guard) return { success: false, error: guard };
+
+    const maxRetries = Math.max(0, options.maxRetries ?? LIMITS.maxRetries);
+    let lastError = 'Request failed';
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      const result = await this.execute({
-        ...options,
-        taskType: options.taskType,
-        signal: options.signal
-      });
+      this.abortController?.abort();
+      const controller = new AbortController();
+      this.abortController = controller;
+      const requestId = ++this.requestId;
 
-      if (result.success) {
-        return result;
-      }
+      const outcome = await this.attempt(options, apiKey!, requestId, combineSignals([options.signal, controller.signal]));
+      if ('success' in outcome) return outcome;
+      if (outcome.aborted) return { success: false, error: ABORT_ERROR };
+      if (!outcome.retryable || attempt >= maxRetries) return { success: false, error: outcome.message };
 
-      lastError = result.error || 'Unknown error';
-
-      if (attempt < maxRetries) {
-        const retryableError = this.getRetryableError(new Error(lastError));
-        
-        if (retryableError.type === 'unknown') {
-          return result;
-        }
-
-        const delay = retryableError.retryAfter 
-          ? retryableError.retryAfter * 1000 
-          : this.calculateBackoff(attempt);
-
-        options.onRetryAttempt?.(attempt + 1, delay, lastError);
-        await new Promise<void>((resolve, reject) => {
-          const onAbort = () => {
-            clearTimeout(timer);
-            reject(new DOMException('Aborted', 'AbortError'));
-          };
-          options.signal?.addEventListener('abort', onAbort, { once: true });
-          const timer = setTimeout(() => {
-            options.signal?.removeEventListener('abort', onAbort);
-            resolve();
-          }, delay);
-        });
+      lastError = outcome.message;
+      const delayMs = Math.min(outcome.retryAfterMs ?? this.calculateBackoff(attempt), LIMITS.retryMaxDelayMs);
+      options.onRetryAttempt?.(attempt + 1, delayMs, lastError);
+      try {
+        await delay(delayMs, options.signal);
+      } catch {
+        return { success: false, error: ABORT_ERROR };
       }
     }
 
-    return { success: false, error: `Max retries exceeded. Last error: ${lastError}` };
-  }
-
-  abort(): void {
-    this.requestId++;
+    return { success: false, error: redactSecrets(`Max retries exceeded. Last error: ${lastError}`) };
   }
 }

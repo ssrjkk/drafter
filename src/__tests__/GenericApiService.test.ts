@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GenericApiService } from '../data/api/GenericApiService';
+import { RateLimiter } from '../lib/rateLimiter';
 
 vi.mock('../lib/metrics', () => ({
   metricsCollector: { recordRequest: vi.fn() },
@@ -30,6 +31,9 @@ describe('GenericApiService', () => {
   beforeEach(() => {
     globalThis.fetch = mockFetch;
     mockFetch.mockReset();
+    // Every provider now goes through the client-side limiter, so each test
+    // needs a fresh window or it trips the limit for the rest of the file.
+    RateLimiter.reset();
     Object.defineProperty(globalThis.navigator, 'onLine', { value: true, writable: true, configurable: true });
     svc = new GenericApiService({
       apiKey: 'test-key',

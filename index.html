@@ -5,9 +5,19 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f0f23" />
+    <!-- Keep share links and API hosts out of the Referer header. -->
+    <meta name="referrer" content="no-referrer" />
+    <!--
+      No 'unsafe-inline' in script-src: the app ships no inline script, so the
+      token bought nothing while defeating the XSS mitigation the policy exists
+      for. Matches nginx.conf / Caddyfile.
+
+      frame-ancestors is ignored in a <meta> CSP, so the static deployments need
+      the header — see Caddyfile, nginx.conf and public/_headers.
+    -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.groq.com https://api.openai.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.deepseek.com https://api.together.xyz https://api.novita.ai https://api.lepton.ai https://api.github.com https://raw.githubusercontent.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
+      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.groq.com https://api.openai.com https://generativelanguage.googleapis.com https://openrouter.ai https://api.deepseek.com https://api.together.xyz https://api.novita.ai https://api.lepton.ai https://api.github.com https://raw.githubusercontent.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
     />
     <meta name="author" content="ssrjkk" />
     <meta name="description" content="Drafter — browser-based QA assistant that turns task descriptions into test plans, test cases, bug reports and more, powered by 9 AI providers." />

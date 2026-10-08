@@ -7,9 +7,10 @@
 import type { Database } from 'sql.js';
 import type { Project, Task, ConversationMessage } from '../types';
 import type { MemoryEntry } from '../types/memory';
+import { mapRowToMemoryEntry } from '../domain/entities/Memory';
 import { queryAll, queryOne, safeRun, execTransaction, buildUpdateQuery } from './dbHelpers';
 import { ErrorService } from './errorService';
-import { ErrorCode } from './constants';
+import { ErrorCode } from '../lib/constants';
 
 export class DatabaseService {
   private lastError: string | null = null;
@@ -62,8 +63,10 @@ export class DatabaseService {
   }
 
   private insertAndReturnId(sql: string, params?: (string | number | null)[]): number {
-    this.safeRun(sql, params);
-    if (this.lastError) return -1;
+    // Branch on safeRun's return value: `lastError` is shared instance state, so
+    // a stale error from an earlier failed statement could make a *successful*
+    // insert report -1.
+    if (!this.safeRun(sql, params)) return -1;
     try {
       this.saveDb();
       const result = this.db.exec("SELECT last_insert_rowid() as id");
@@ -93,9 +96,9 @@ export class DatabaseService {
   updateProject(id: number, updates: Partial<Project>): boolean {
     const result = buildUpdateQuery('projects', updates as Record<string, unknown>, id);
     if (!result) return false;
-    this.safeRun(result.sql, result.params);
+    if (!this.safeRun(result.sql, result.params)) return false;
     this.saveDb();
-    return !this.lastError;
+    return true;
   }
 
   updateProjectMemory(id: number, memory: string): void {
@@ -138,8 +141,10 @@ export class DatabaseService {
       const firstRow = result[0]?.values[0]?.[0];
       results.push(firstRow != null ? Number(firstRow) : -1);
     });
-    await this.execTransaction(operations);
-    return results;
+    // On rollback the collected ids refer to rows that no longer exist, so
+    // report failure rather than a plausible-looking success.
+    const committed = await this.execTransaction(operations);
+    return committed ? results : [];
   }
 
   getDatabase(): Database {
@@ -166,17 +171,22 @@ export class DatabaseService {
   }
 
   getRecentSessions(projectId: number, limit: number = 10): Array<{ task_type: string; context: string; output: string; created_at: string }> {
+    // DISTINCT included created_at, so this was just "the last N tasks" with
+    // duplicates and no deduplication at all.
     return this.queryAll(
-      "SELECT DISTINCT task_type, context, output, created_at FROM tasks WHERE project_id = ? ORDER BY created_at DESC LIMIT ?",
+      "SELECT task_type, context, output, created_at FROM tasks WHERE project_id = ? ORDER BY created_at DESC, id DESC LIMIT ?",
       [projectId, limit]
     );
   }
 
   getMemoryEntries(projectId: number, category?: string): MemoryEntry[] {
-    const sql = category 
+    const sql = category
       ? "SELECT * FROM memory_entries WHERE project_id = ? AND category = ? ORDER BY created_at DESC"
       : "SELECT * FROM memory_entries WHERE project_id = ? ORDER BY created_at DESC";
-    return this.queryAll<MemoryEntry>(sql, category ? [projectId, category] : [projectId]);
+    // Must go through the row mapper: raw rows carry whatever category was
+    // persisted, and an unknown one used to throw during render.
+    return this.queryAll<Record<string, unknown>>(sql, category ? [projectId, category] : [projectId])
+      .map(mapRowToMemoryEntry);
   }
 
   createMemoryEntry(entry: Omit<MemoryEntry, 'id' | 'created_at' | 'updated_at'>): number {
@@ -197,16 +207,16 @@ export class DatabaseService {
       const firstRow = result[0]?.values[0]?.[0];
       results.push(firstRow != null ? Number(firstRow) : -1);
     });
-    await this.execTransaction(operations);
-    return results;
+    const committed = await this.execTransaction(operations);
+    return committed ? results : [];
   }
 
   updateMemoryEntry(id: number, updates: Partial<MemoryEntry>): boolean {
     const result = buildUpdateQuery('memory_entries', updates as Record<string, unknown>, id);
     if (!result) return false;
-    this.safeRun(result.sql, result.params);
+    if (!this.safeRun(result.sql, result.params)) return false;
     this.saveDb();
-    return !this.lastError;
+    return true;
   }
 
   deleteMemoryEntry(id: number): void {
@@ -215,12 +225,14 @@ export class DatabaseService {
   }
 
   searchMemoryEntries(projectId: number, searchTerm: string): MemoryEntry[] {
+    // An empty term would escape to '%%' and dump the whole project.
+    if (!searchTerm) return [];
     const escaped = searchTerm.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
     const term = `%${escaped}%`;
-    return this.queryAll<MemoryEntry>(
+    return this.queryAll<Record<string, unknown>>(
       "SELECT * FROM memory_entries WHERE project_id = ? AND (key LIKE ? ESCAPE '\\' OR value LIKE ? ESCAPE '\\') ORDER BY created_at DESC",
       [projectId, term, term]
-    );
+    ).map(mapRowToMemoryEntry);
   }
 
   getMemoryStats(projectId: number): { total: number; categories: Record<string, number> } {

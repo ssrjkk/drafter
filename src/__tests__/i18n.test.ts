@@ -25,9 +25,15 @@ describe('i18n', () => {
     expect(result).toContain('Claude');
   });
 
-  it('t() returns key for missing param', () => {
-    const result = t('settings.apiKey', { provider: '' });
-    expect(result).toContain('{{provider}}');
+  it('t() substitutes falsy params instead of leaving the placeholder', () => {
+    // `params[name] || '{{name}}'` rendered the raw placeholder for values
+    // like 0 and '' — "0 tests" came out as "{{count}} tests".
+    expect(t('chat.wordsGenerated', { count: 0 })).toBe('0 words generated');
+    expect(t('settings.apiKey', { provider: '' })).toContain('API Key');
+  });
+
+  it('t() keeps the placeholder for an absent param', () => {
+    expect(t('settings.apiKey')).toContain('{{provider}}');
   });
 
   it('setLocale changes language', () => {
