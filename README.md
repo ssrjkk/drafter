@@ -19,6 +19,12 @@
 
 ---
 
+
+
+## Screenshots
+
+<!-- TODO: Add demo screenshot -->
+
 ## What is Drafter?
 
 A browser-based QA assistant that turns your task descriptions into structured outputs — test plans, test cases, automation code, bug reports, security checks, and more. No server required. Runs entirely in your browser with SQLite (WebAssembly).
@@ -360,3 +366,18 @@ MIT License. Copyright (c) 2026 ssrjkk. See [LICENSE](LICENSE) for details.
 **Built with care for the QA community.**
 
 </div>
+
+
+## Installation
+
+```bash
+git clone https://github.com/ssrjkk/drafter.git
+cd drafter
+npm install
+```
+
+## Usage
+
+```bash
+npm run dev
+```
