@@ -128,7 +128,7 @@ const PresetItem = memo(function PresetItem({ preset, onSelect }: { preset: Cont
             {preset.tags.slice(0, 2).map(tag => (
               <span
                 key={tag}
-                className="px-1.5 py-0.5 text-[10px] bg-gray-100 dark:bg-white/5 rounded text-gray-500"
+                className="px-1.5 py-0.5 text-[10px] bg-gray-100 dark:bg-white/5 rounded-sm text-gray-500"
               >
                 {tag}
               </span>

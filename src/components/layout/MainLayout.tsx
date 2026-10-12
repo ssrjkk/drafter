@@ -18,7 +18,7 @@ export function MainLayout({ sidebar, main }: MainLayoutProps) {
         {sidebar}
       </aside>
 
-      <main id="main-content" tabIndex={-1} className="lg:col-span-9 space-y-6 animate-fadeIn outline-none" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
+      <main id="main-content" tabIndex={-1} className="lg:col-span-9 space-y-6 animate-fadeIn" style={{ animationDelay: '300ms', animationFillMode: 'both' }}>
         {main}
       </main>
     </div>

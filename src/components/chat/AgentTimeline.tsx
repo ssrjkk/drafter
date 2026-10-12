@@ -37,7 +37,7 @@ function StepDetail({ step }: { step: AgentStep }) {
 
   if (step.type === 'error') {
     return (
-      <div className="text-xs text-red-600 dark:text-red-400 bg-red-500/10 px-2 py-1 rounded">
+      <div className="text-xs text-red-600 dark:text-red-400 bg-red-500/10 px-2 py-1 rounded-sm">
         {step.content}
       </div>
     );
@@ -61,7 +61,7 @@ function StepDetail({ step }: { step: AgentStep }) {
           )}
         </div>
         <Collapse show={expanded && !!step.toolInput}>
-          <pre className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-white/5 rounded px-2 py-1 overflow-hidden font-mono">
+          <pre className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-white/5 rounded-sm px-2 py-1 overflow-hidden font-mono">
             {JSON.stringify(step.toolInput, null, 2)}
           </pre>
         </Collapse>
@@ -85,7 +85,7 @@ function StepDetail({ step }: { step: AgentStep }) {
           </button>
         </div>
         <Collapse show={expanded && !!step.toolOutput}>
-          <pre className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-white/5 rounded px-2 py-1 overflow-x-auto max-h-40 overflow-y-auto font-mono whitespace-pre-wrap">
+          <pre className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-white/5 rounded-sm px-2 py-1 overflow-x-auto max-h-40 overflow-y-auto font-mono whitespace-pre-wrap">
             {step.toolOutput}
           </pre>
         </Collapse>

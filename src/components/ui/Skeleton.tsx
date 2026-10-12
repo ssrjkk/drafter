@@ -14,12 +14,12 @@ export function Skeleton({ className = '', count = 1 }: SkeletonProps) {
     return (
       <div className="space-y-2" role="status" aria-label="Loading">
         {Array.from({ length: count }, (_, i) => (
-          <div key={i} className={`animate-pulse bg-gray-200 dark:bg-white/5 rounded ${className}`} />
+          <div key={i} className={`animate-pulse bg-gray-200 dark:bg-white/5 rounded-sm ${className}`} />
         ))}
       </div>
     );
   }
-  return <div role="status" aria-label="Loading" className={`animate-pulse bg-gray-200 dark:bg-white/5 rounded ${className}`} />;
+  return <div role="status" aria-label="Loading" className={`animate-pulse bg-gray-200 dark:bg-white/5 rounded-sm ${className}`} />;
 }
 
 export function SkeletonCard() {

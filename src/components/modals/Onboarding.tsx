@@ -94,7 +94,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn"
       role="dialog" aria-modal="true" aria-label={t('onboarding.title')}
     >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleSkip} role="presentation" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-xs" onClick={handleSkip} role="presentation" />
 
       <div
         className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-scaleIn"

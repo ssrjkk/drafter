@@ -84,7 +84,7 @@ export function MasterPasswordModal({ onSuccess }: MasterPasswordModalProps) {
   if (isNewUser === null) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="master-password-title">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="master-password-title">
       <div className="w-full max-w-md mx-4 p-6 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl animate-scaleIn">
         <div className="text-center mb-6">
           <div className="text-3xl mb-3">🔐</div>

@@ -196,14 +196,14 @@ export const SessionHistory = memo(function SessionHistory({ sessions, onLoadSes
                         <div className="p-3 space-y-3">
                           <div>
                             <p className="text-xs text-gray-500 mb-1">{t('history.context')}</p>
-                            <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 rounded p-2 max-h-24 overflow-y-auto">
+                            <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 rounded-sm p-2 max-h-24 overflow-y-auto">
                               {session.context}
                             </p>
                           </div>
 
                           <div>
                             <p className="text-xs text-gray-500 mb-1">{t('history.output')}</p>
-                            <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 rounded p-2 max-h-32 overflow-y-auto">
+                            <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-white/5 rounded-sm p-2 max-h-32 overflow-y-auto">
                               {truncate(session.output, 500)}
                             </p>
                           </div>

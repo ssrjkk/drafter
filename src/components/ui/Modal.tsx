@@ -92,13 +92,13 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md' 
     >
       <div
         data-testid="modal-backdrop"
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
         onClick={onClose}
       >
         <div
           ref={contentRef}
           tabIndex={-1}
-          className={`bg-white dark:bg-slate-800/95 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-glass-lg ${maxWidth} w-full outline-none animate-scaleIn`}
+          className={`bg-white dark:bg-slate-800/95 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-glass-lg ${maxWidth} w-full animate-scaleIn`}
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"

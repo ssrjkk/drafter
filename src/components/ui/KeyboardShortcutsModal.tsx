@@ -31,7 +31,7 @@ export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps)
         {shortcuts.map(({ keys, description }) => (
           <div key={keys} className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-white/10 last:border-0">
             <span className="text-sm text-gray-700 dark:text-gray-300">{description}</span>
-            <kbd className="px-2 py-1 text-xs font-mono bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded text-gray-800 dark:text-gray-200">
+            <kbd className="px-2 py-1 text-xs font-mono bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-sm text-gray-800 dark:text-gray-200">
               {keys}
             </kbd>
           </div>

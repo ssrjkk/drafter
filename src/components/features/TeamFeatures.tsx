@@ -168,7 +168,7 @@ export const TeamFeatures = memo(function TeamFeatures({
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 text-xs rounded ${
+                            <span className={`px-2 py-0.5 text-xs rounded-sm ${
                               member.role === 'owner' ? 'bg-amber-500/20 text-amber-400' :
                               member.role === 'editor' ? 'bg-blue-500/20 text-blue-400' :
                               'bg-gray-500/20 text-gray-400'

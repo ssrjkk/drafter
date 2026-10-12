@@ -106,7 +106,7 @@ export const MetricsDashboard = memo(function MetricsDashboard({ onClose }: Metr
             <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
               <div className="w-full flex flex-col justify-end" style={{ height: '80px' }}>
                 <div
-                  className="bg-gradient-to-t from-purple-500 to-indigo-500 rounded-t-sm min-h-[2px] animate-fadeIn"
+                  className="bg-gradient-to-t from-purple-500 to-indigo-500 rounded-t-xs min-h-[2px] animate-fadeIn"
                   style={{ height: `${(day.count / maxDayCount) * 100}%`, transition: `height 0.3s ease ${i * 0.05}s` }}
                 />
               </div>

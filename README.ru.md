@@ -280,7 +280,7 @@ npm run build
 
 | Слой | Технология |
 |------|-----------|
-| UI | React 18.3, TypeScript 5.7, TailwindCSS 3.4 |
+| UI | React 18.3, TypeScript 5.7, TailwindCSS 4.3 |
 | Состояние | Zustand 5 + immer |
 | База данных | sql.js 1.10 (SQLite WASM) + IndexedDB |
 | PDF | jsPDF 4 |

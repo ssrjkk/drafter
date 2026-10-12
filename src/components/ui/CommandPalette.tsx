@@ -92,7 +92,7 @@ export function CommandPalette({ commands, open, onClose }: CommandPaletteProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]">
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} role="presentation" data-testid="command-palette-backdrop" />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-xs" onClick={onClose} role="presentation" data-testid="command-palette-backdrop" />
       <div className="relative w-full max-w-lg mx-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-scaleIn" role="dialog" aria-label="Command palette" aria-modal="true">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-white/10">
           <span className="text-gray-400" aria-hidden="true">🔍</span>
@@ -109,9 +109,9 @@ export function CommandPalette({ commands, open, onClose }: CommandPaletteProps)
             aria-haspopup="listbox"
             aria-controls={listboxId}
             aria-activedescendant={filtered[selectedIndex] ? `cmd-${filtered[selectedIndex].id}` : undefined}
-            className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+            className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
           />
-          <kbd className="text-xs text-gray-500 dark:text-gray-500 bg-gray-100 dark:bg-white/5 px-1.5 py-0.5 rounded">ESC</kbd>
+          <kbd className="text-xs text-gray-500 dark:text-gray-500 bg-gray-100 dark:bg-white/5 px-1.5 py-0.5 rounded-sm">ESC</kbd>
         </div>
 
         <div ref={listRef} id={listboxId} role="listbox" aria-label="Commands" className="max-h-80 overflow-y-auto py-2">
