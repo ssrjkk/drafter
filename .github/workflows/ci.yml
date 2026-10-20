@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 
 # CI только читает репозиторий: права объявлены явно, иначе job с умолчанию
 # write-all получает запись в репозиторий «на всякий случай».
