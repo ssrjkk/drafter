@@ -38,12 +38,12 @@ export default defineConfig(({ mode }) => ({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
   worker: {
     format: 'es',
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         entryFileNames: 'workers/[name]-[hash].js',
       },
@@ -51,19 +51,19 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     target: 'es2020',
-    minify: 'esbuild',
+    minify: false,
     sourcemap: false,
     clean: true,
-    esbuild: {
-      drop: ['debugger', 'console'],
-    },
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          'ui-vendor': ['react', 'react-dom'],
-          'db-vendor': ['sql.js'],
-          'state-vendor': ['zustand', 'immer'],
-          'utils-vendor': ['jspdf'],
+        minify: { compress: { dropConsole: true, dropDebugger: true } },
+        codeSplitting: {
+          groups: [
+            { name: 'ui-vendor', test: /node_modules[\\/]react(-dom)?[\\/]/ },
+            { name: 'db-vendor', test: /node_modules[\\/]sql\.js[\\/]/ },
+            { name: 'state-vendor', test: /node_modules[\\/](zustand|immer)[\\/]/ },
+            { name: 'utils-vendor', test: /node_modules[\\/]jspdf[\\/]/ },
+          ],
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
