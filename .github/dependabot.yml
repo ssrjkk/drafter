@@ -5,6 +5,12 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    ignore:
+      # eslint 10 не ставится: eslint-plugin-jsx-a11y 6.10.2 (последняя версия)
+      # объявляет peer eslint "^3 || … || ^9", и npm падает с ERESOLVE.
+      # Возобновить, когда плагинSupport для eslint 10 выйдет.
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
     groups:
       production-dependencies:
         dependency-type: production
