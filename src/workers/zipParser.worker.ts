@@ -89,6 +89,9 @@ export function safeArchivePath(rawPath: string): string | null {
 }
 
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
+  // Worker принадлежит этому же источнику, что и страница: без проверки любой
+  // документ, получив ссылку на порт, смог бы подсунуть сюда архив на разбор.
+  if (event.origin !== self.location.origin) return;
   const startTime = performance.now();
   const { requestId, data } = event.data;
 
