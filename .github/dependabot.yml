@@ -8,7 +8,7 @@ updates:
     ignore:
       # eslint 10 не ставится: eslint-plugin-jsx-a11y 6.10.2 (последняя версия)
       # объявляет peer eslint "^3 || … || ^9", и npm падает с ERESOLVE.
-      # Возобновить, когда плагинSupport для eslint 10 выйдет.
+      # Возобновить, когда у плагина выйдет поддержка eslint 10.
       - dependency-name: eslint
         update-types: [version-update:semver-major]
     groups:
