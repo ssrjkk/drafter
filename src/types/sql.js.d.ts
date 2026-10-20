@@ -21,3 +21,11 @@ declare module 'sql.js' {
 
   export default function initSqlJs(config?: { locateFile?: (file: string) => string }): Promise<SqlJsStatic>;
 }
+
+// Приложение импортирует конкретный билд (`dist/sql-wasm.js`), а не корневой exports-map:
+// у '.' стоит browser-условие, и vite мог бы подставить другой бинарь, чем тот, что лежит
+// рядом с глиной. Типы те же, что у 'sql.js'.
+declare module 'sql.js/dist/sql-wasm.js' {
+  export * from 'sql.js';
+  export { default } from 'sql.js';
+}

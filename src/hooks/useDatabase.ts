@@ -5,8 +5,9 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import initSqlJs from 'sql.js';
+import initSqlJs from 'sql.js/dist/sql-wasm.js';
 import type { Database } from 'sql.js';
+import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { DatabaseService } from '../lib/database';
 import { createStorageProvider } from '../lib/storage';
 import { runMigrations, getSchemaVersion, LATEST_SCHEMA_VERSION } from '../lib/migrations';
@@ -76,11 +77,11 @@ export function useDatabase() {
     const initDb = async () => {
       try {
         performance.mark('db:init:start');
-        // Always load the published asset by name: sql.js exposes a "browser" export
-        // condition whose glue asks for sql-wasm-browser.wasm, which we do not ship, so
-        // the request would fall through to the SPA index.html and fail with a WASM
-        // magic-word CompileError.
-        const SQL = await initSqlJs({ locateFile: () => `${import.meta.env.BASE_URL}sql-wasm.wasm` });
+        // И глина, и .wasm берутся из одного и того же установленного пакета: `?url`
+        // отдаёт собрarт с хэшем в имени. Раньше wasm лежал копией в public/, и после
+        // обновления sql.js глина осталась новая, а бинарь — старый (наборы экспортов
+        // не совпали, старт падал с «X is not a function»).
+        const SQL = await initSqlJs({ locateFile: () => sqlWasmUrl });
         const storage = await createStorageProvider();
 
         let database: Database;
