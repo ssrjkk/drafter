@@ -15,6 +15,10 @@
 
 **[English / Английский](README.md)**
 
+<a href="https://ssrjkk.github.io/drafter/"><img src="docs/screenshots/app.png" alt="Drafter в браузере: сетка модулей, список проектов, память и лимит запросов" width="900"/></a>
+
+Живое демо: [ssrjkk.github.io/drafter](https://ssrjkk.github.io/drafter/) — скриншот снят с задеплоенной сборки без настроенного AI-ключа, поэтому баннер «Требуется API ключ AI» — это реальное состояние, а не макет.
+
 </div>
 
 ---

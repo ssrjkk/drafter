@@ -15,6 +15,10 @@
 
 **[Russian / Русский](README.ru.md)**
 
+<a href="https://ssrjkk.github.io/drafter/"><img src="docs/screenshots/app.png" alt="Drafter in the browser: module grid, project list, memory and rate limit" width="900"/></a>
+
+Live demo: [ssrjkk.github.io/drafter](https://ssrjkk.github.io/drafter/) — the screenshot is the deployed build with no AI key configured, so the "AI key required" banner is the real state.
+
 </div>
 
 ---
