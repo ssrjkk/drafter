@@ -357,7 +357,7 @@ MIT License. Copyright (c) 2026 ssrjkk. See [LICENSE](LICENSE) for details.
 
 ## Author
 
-**ssrjkk** — QA Engineer & Software Developer
+**ssrjkk** — Full-stack Engineer & AI Tooling Developer
 
 - Telegram: [@ssrjkk](https://t.me/ssrjkk)
 - GitHub: [ssrjkk](https://github.com/ssrjkk)
