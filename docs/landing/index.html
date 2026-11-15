@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Drafter — чертёж QA-покрытия</title>
+<meta name="description" content="Drafter — AI-Powered QA Assistant: черновики тест-планов, разбор кода и bug-репорты через 9 AI-провайдеров. TypeScript 5.7, 607 тестов. Живое демо прямо на сайте.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SSRJKK">
+<meta property="og:title" content="Drafter — чертёж QA-покрытия">
+<meta property="og:description" content="Drafter — AI-Powered QA Assistant: черновики тест-планов, разбор кода и bug-репорты через 9 AI-провайдеров. TypeScript 5.7, 607 тестов. Живое демо прямо на сайте.">
+<meta property="og:url" content="https://ssrjkk.github.io/drafter/landing/">
+<meta property="og:locale" content="ru_RU">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Drafter — чертёж QA-покрытия">
+<meta name="twitter:description" content="Drafter — AI-Powered QA Assistant: черновики тест-планов, разбор кода и bug-репорты через 9 AI-провайдеров. TypeScript 5.7, 607 тестов. Живое демо прямо на сайте.">
+<link rel="canonical" href="https://ssrjkk.github.io/drafter/landing/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f2f4f7; --grid:#dde3ea; --grid2:#cbd3db;
+  --ink:#16324f; --ink2:#41597a; --stamp:#b3542e; --accent:#0e5a8a;
+  --sans:'IBM Plex Sans',sans-serif; --mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    linear-gradient(180deg, var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid2) 1px, transparent 1px),
+    linear-gradient(180deg, var(--grid2) 1px, transparent 1px),
+    var(--paper);
+  background-size:24px 24px, 24px 24px, 120px 120px, 120px 120px;
+  color:var(--ink); font:15px/1.7 var(--sans);
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1160px;margin:0 auto;padding:0 28px}
+/* ── шапка-штамп листа ───────────────────────── */
+header{border-bottom:2px solid var(--ink)}
+header .bar{
+  display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:22px 0;
+}
+header .brand{font:600 16px var(--mono);letter-spacing:.2em;text-transform:uppercase}
+header .brand b{color:var(--stamp)}
+header nav{display:flex;gap:24px;font-size:13.5px}
+header nav a{color:var(--ink2);text-decoration:none}
+header nav a:hover{color:var(--accent)}
+header .demo{padding:10px 18px;border:1.6px solid var(--accent);color:var(--accent);
+  text-decoration:none;font:600 13.5px var(--sans);border-radius:4px}
+header .demo:hover{background:var(--accent);color:#fff;transition:.18s}
+/* ── хиро ────────────────────────────────────── */
+.hero{position:relative;padding:96px 0 70px}
+.stamp{
+  position:absolute;top:34px;right:0;padding:10px 22px;border:3px solid var(--stamp);
+  color:var(--stamp);font:700 20px var(--mono);letter-spacing:.3em;
+  transform:rotate(-6deg);border-radius:6px;opacity:.85;
+}
+.hero .k{font:600 12.5px var(--mono);letter-spacing:.24em;color:var(--accent);text-transform:uppercase}
+h1{font:700 clamp(40px,5.6vw,70px)/1.1 var(--sans);letter-spacing:-.02em;margin:20px 0 16px;max-width:20ch}
+h1 em{font-style:normal;color:var(--accent)}
+.hero p{font-size:16.5px;color:var(--ink2);max-width:58ch;margin-bottom:34px}
+.cta{display:flex;gap:14px;flex-wrap:wrap}
+.btn{padding:15px 28px;border-radius:6px;text-decoration:none;font:600 14px var(--sans);
+  border:1.6px solid var(--ink);color:var(--ink)}
+.btn.solid{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:hover{transform:translateY(-2px);transition:.18s}
+/* размерная линия под хиро */
+.dim{margin-top:60px;height:36px}
+.dim svg{width:100%;height:36px}
+.dim line, .dim path{stroke:var(--ink);stroke-width:1.4;fill:none}
+.dim text{font:11px var(--mono);fill:var(--ink2)}
+/* ── title block (штамп чертежа) ─────────────── */
+.tblock{border:2px solid var(--ink);display:grid;grid-template-columns:repeat(4,1fr);
+  border-radius:4px;overflow:hidden;margin-top:26px}
+.tblock .cell{padding:14px 18px;border-right:1.5px solid var(--ink)}
+.tblock .cell:last-child{border-right:none}
+.tblock .l{font:600 10px var(--mono);letter-spacing:.18em;color:var(--ink2);
+  text-transform:uppercase;display:block;margin-bottom:4px}
+.tblock .v{font:600 14px var(--mono);color:var(--ink)}
+/* ── секции-выноски ──────────────────────────── */
+section{padding:86px 0 0}
+.k{font:600 12px var(--mono);letter-spacing:.24em;color:var(--accent);text-transform:uppercase}
+h2{font:700 clamp(28px,3.8vw,44px)/1.16 var(--sans);letter-spacing:-.02em;margin:12px 0 16px}
+section p.intro{color:var(--ink2);max-width:62ch;margin-bottom:38px}
+.callouts{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.call{
+  position:relative;border:1.6px solid var(--ink);border-radius:4px;background:rgba(255,255,255,.7);
+  padding:22px 24px;
+}
+.call::before{ /* выноска-лидер */
+  content:"";position:absolute;top:-21px;left:34px;width:1.6px;height:21px;background:var(--ink);
+}
+.call::after{content:"";position:absolute;top:-25px;left:31px;width:7px;height:7px;
+  border:1.6px solid var(--ink);border-radius:50%;background:var(--paper)}
+.call b{display:block;font:600 12px var(--mono);letter-spacing:.16em;color:var(--stamp);
+  text-transform:uppercase;margin-bottom:10px}
+.call h3{font:700 19px var(--sans);margin-bottom:8px}
+.call p{font-size:14px;color:var(--ink2)}
+/* провайдеры */
+.providers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:820px}
+.prov{border:1.6px solid var(--ink);border-radius:4px;padding:13px 18px;
+  font:600 13px var(--mono);background:rgba(255,255,255,.7);text-align:center}
+.prov span{color:var(--stamp)}
+/* метрики */
+.metrics{display:flex;gap:16px;flex-wrap:wrap}
+.metric{border:1.6px solid var(--ink);border-radius:4px;padding:20px 30px;min-width:190px;
+  background:rgba(255,255,255,.7)}
+.metric b{display:block;font:700 34px var(--sans);letter-spacing:-.02em}
+.metric span{font:12px var(--mono);color:var(--ink2)}
+/* ── подвал-штамп ────────────────────────────── */
+footer{margin-top:90px;border-top:2px solid var(--ink)}
+footer .bar{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:24px 0 60px;font-size:13px;color:var(--ink2)}
+footer a{color:var(--accent);text-decoration:none}
+@media(max-width:900px){
+  .callouts{grid-template-columns:1fr}
+  .providers{grid-template-columns:1fr 1fr}
+  .tblock{grid-template-columns:1fr 1fr}
+  .tblock .cell{border-bottom:1.5px solid var(--ink)}
+  header nav{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <span class="brand">DRAFTER<b>_</b>QA BLUEPRINT</span>
+    <nav>
+      <a href="#features">возможности</a>
+      <a href="#providers">провайдеры</a>
+      <a href="#metrics">метрики</a>
+    </nav>
+    <a class="demo" href="https://ssrjkk.github.io/drafter/">Живое демо ↗</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <span class="stamp">DRAFT №1</span>
+    <span class="k">ai-powered qa assistant</span>
+    <h1>Чертёж <em>QA-покрытия</em>, который рисует сам.</h1>
+    <p>Drafter — AI-ассистент для QA: генерирует черновики тест-планов, разбирает код
+    и пишет bug-репорты. 9 AI-провайдеров на выбор — вы приносите продукт, он приносит
+    покрытие.</p>
+    <div class="cta">
+      <a class="btn solid" href="https://ssrjkk.github.io/drafter/">Открыть живое демо →</a>
+      <a class="btn" href="https://github.com/ssrjkk/drafter">GitHub ↗</a>
+    </div>
+
+    <div class="dim" aria-hidden="true">
+      <svg viewBox="0 0 1100 36" preserveAspectRatio="none">
+        <line x1="10" y1="8" x2="1090" y2="8"/>
+        <line x1="10" y1="2" x2="10" y2="20"/>
+        <line x1="1090" y1="2" x2="1090" y2="20"/>
+        <line x1="530" y1="2" x2="530" y2="20"/>
+        <path d="M14 5 L10 8 L14 11 M1086 5 L1090 8 L1086 11 M526 5 L530 8 L526 11 M534 5 L530 8 L534 11"/>
+        <text x="250" y="30">545 тест-планов →</text>
+        <text x="790" y="30">← 545 bug-репортов</text>
+      </svg>
+    </div>
+
+    <div class="tblock">
+      <div class="cell"><span class="l">проект</span><span class="v">DRAFTER</span></div>
+      <div class="cell"><span class="l">стек</span><span class="v">TypeScript 5.7</span></div>
+      <div class="cell"><span class="l">проверка</span><span class="v">607 тестов</span></div>
+      <div class="cell"><span class="l">лист</span><span class="v">1 из 1 · 1:1</span></div>
+    </div>
+  </div>
+</div>
+
+<section id="features">
+  <div class="wrap">
+    <span class="k">возможности</span>
+    <h2>Три выноски на чертеже</h2>
+    <p class="intro">Каждая функция — отдельная размерная линия, каждая ведёт от вашего продукта к готовому артефакту QA.</p>
+    <div class="callouts">
+      <div class="call"><b>fig. 1</b><h3>Test plans</h3><p>Черновики тест-планов из скриншотов и описания фичи — за минуты, а не часы.</p></div>
+      <div class="call"><b>fig. 2</b><h3>Code analysis</h3><p>Разбор кода: узкие места, непокрытые ветки, кандидаты на тесты.</p></div>
+      <div class="call"><b>fig. 3</b><h3>Bug reports</h3><p>Репро-шаги, ожидаемое/фактическое, серьёзность — репорты пишутся сами.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="providers">
+  <div class="wrap">
+    <span class="k">провайдеры</span>
+    <h2>9 AI-провайдеров на одном чертеже</h2>
+    <p class="intro">Ключи свои, провайдеры сменяемые — инструмент не привязан к одному вендору.</p>
+    <div class="providers">
+      <div class="prov"><span>01</span> OpenAI</div>
+      <div class="prov"><span>02</span> Anthropic</div>
+      <div class="prov"><span>03</span> Google Gemini</div>
+      <div class="prov"><span>04</span> DeepSeek</div>
+      <div class="prov"><span>05</span> Mistral</div>
+      <div class="prov"><span>06</span> Groq</div>
+      <div class="prov"><span>07</span> OpenRouter</div>
+      <div class="prov"><span>08</span> Ollama · local</div>
+      <div class="prov"><span>09</span> свой endpoint</div>
+    </div>
+  </div>
+</section>
+
+<section id="metrics">
+  <div class="wrap">
+    <span class="k">метрики листа</span>
+    <h2>Проверено, а не начерчено</h2>
+    <p class="intro">Живое демо развёрнуто здесь же: сборка без AI-ключа показывает честное состояние — баннер «AI key required».</p>
+    <div class="metrics">
+      <div class="metric"><b>607</b><span>тестов</span></div>
+      <div class="metric"><b>9</b><span>AI-провайдеров</span></div>
+      <div class="metric"><b>TS 5.7</b><span>типизация</span></div>
+      <div class="metric"><b>live</b><span>демо без регистрации</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap bar">
+    <span>Drafter · AI-Powered QA Assistant · чертёж №1</span>
+    <span><a href="https://ssrjkk.github.io/drafter/">Живое демо ↗</a> · <a href="https://github.com/ssrjkk/drafter">GitHub ↗</a> · <a href="https://ssrjkk.github.io/">все проекты ↗</a></span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script>
+(function(){
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (!window.gsap || !window.ScrollTrigger) return;
+  gsap.registerPlugin(ScrollTrigger);
+
+  /* штамп шлёпается */
+  gsap.from(".stamp", {duration:.5, scale:1.7, opacity:0, rotation:-14,
+    ease:"power4.in", delay:.5});
+
+  gsap.from(".hero .k, .hero h1, .hero p, .cta", {
+    duration:.85, y:22, opacity:0, stagger:.1, ease:"power2.out", delay:.15
+  });
+
+  /* размерная линия прочерчивается */
+  gsap.from(".dim line, .dim path", {
+    duration:1.1, opacity:0, stagger:.05, ease:"power2.inOut", delay:.9
+  });
+
+  gsap.from(".tblock .cell", {
+    duration:.6, y:14, opacity:0, stagger:.08, ease:"power2.out",
+    scrollTrigger:{trigger:".tblock", start:"top 84%", once:true}
+  });
+
+  gsap.utils.toArray("section").forEach(function(sec){
+    gsap.from(sec.querySelectorAll(".k, h2, p.intro"), {
+      duration:.8, y:20, opacity:0, stagger:.08, ease:"power2.out",
+      scrollTrigger:{trigger:sec, start:"top 74%", once:true}
+    });
+    var cards = sec.querySelectorAll(".call, .prov, .metric");
+    if (cards.length) gsap.from(cards, {
+      duration:.6, y:18, opacity:0, stagger:.06, ease:"power2.out",
+      scrollTrigger:{trigger:sec, start:"top 68%", once:true}
+    });
+  });
+})();
+</script>
+</body>
+</html>
