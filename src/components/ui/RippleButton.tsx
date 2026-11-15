@@ -55,7 +55,7 @@ export function RippleButton({
   };
 
   const variants = {
-    primary: "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-glass hover:shadow-glow",
+    primary: "bg-teal-600 hover:bg-teal-500 text-white shadow-glass hover:shadow-glow",
     secondary: "bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-white/20 shadow-glass",
     danger: "bg-red-100 dark:bg-red-500/20 border border-red-300 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/30",
   };

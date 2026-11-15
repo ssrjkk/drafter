@@ -29,8 +29,8 @@ const KeyboardShortcutsModal = lazy(() => import('./components/ui/KeyboardShortc
 
 function GradientWrapper({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-purple-100 to-slate-100 dark:from-slate-900 dark:via-purple-900 dark:to-slate-900 transition-colors duration-300">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-200/20 via-slate-200/40 to-slate-200 dark:from-purple-900/20 dark:via-slate-900/40 dark:to-slate-900" />
+    <div className="min-h-screen bg-stone-100 dark:bg-stone-950 transition-colors duration-300">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-100/30 via-transparent to-transparent dark:from-teal-900/15 dark:via-transparent dark:to-transparent" />
       {children}
     </div>
   );
@@ -124,7 +124,7 @@ function AppInner() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
         <FadeIn delay={0} className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-800 via-purple-500 to-purple-600 dark:from-white dark:via-purple-200 dark:to-purple-400 bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl md:text-5xl font-bold text-stone-800 dark:text-teal-100 bg-clip-text text-transparent mb-2">
             {APP_NAME}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">{APP_HEADER_SUBTITLE}</p>

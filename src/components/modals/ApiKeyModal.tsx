@@ -47,7 +47,7 @@ export function ApiKeyModal({ onClose, provider = 'claude' }: ApiKeyModalProps) 
           href={providerInfo.docsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-purple-600 dark:text-purple-400 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500"
+          className="text-purple-600 dark:text-purple-400 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500"
         >
           {new URL(providerInfo.docsUrl).hostname}
         </a>
@@ -60,7 +60,7 @@ export function ApiKeyModal({ onClose, provider = 'claude' }: ApiKeyModalProps) 
         placeholder={t('apiKey.placeholder')}
         aria-label={t('apiKey.label')}
         autoFocus
-        className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500 focus:border-purple-500 transition-colors"
+        className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 focus:border-purple-500 transition-colors"
       />
       <div className="flex gap-3 mt-4">
         <button
@@ -73,7 +73,7 @@ export function ApiKeyModal({ onClose, provider = 'claude' }: ApiKeyModalProps) 
         <button
           onClick={handleSave}
           disabled={saving || !key.trim()}
-          className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500"
+          className="flex-1 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500"
         >
           {saving ? t('apiKey.saving') : t('common.save')}
         </button>

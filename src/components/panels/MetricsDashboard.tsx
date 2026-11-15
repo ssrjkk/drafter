@@ -82,7 +82,7 @@ export const MetricsDashboard = memo(function MetricsDashboard({ onClose }: Metr
         </GlassCard>
         
         <GlassCard className="p-4">
-          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{successRate}%</div>
+          <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">{successRate}%</div>
           <div className="text-xs text-gray-500 dark:text-gray-400">{t('metrics.successRate')}</div>
         </GlassCard>
       </div>
@@ -106,7 +106,7 @@ export const MetricsDashboard = memo(function MetricsDashboard({ onClose }: Metr
             <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
               <div className="w-full flex flex-col justify-end" style={{ height: '80px' }}>
                 <div
-                  className="bg-gradient-to-t from-purple-500 to-indigo-500 rounded-t-xs min-h-[2px] animate-fadeIn"
+                  className="bg-teal-500 rounded-t-xs min-h-[2px] animate-fadeIn"
                   style={{ height: `${(day.count / maxDayCount) * 100}%`, transition: `height 0.3s ease ${i * 0.05}s` }}
                 />
               </div>
@@ -128,7 +128,7 @@ export const MetricsDashboard = memo(function MetricsDashboard({ onClose }: Metr
                 <span className="text-xs text-gray-500 w-4">{i + 1}</span>
                 <div className="flex-1 bg-gray-200 dark:bg-white/5 rounded-full h-2 overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 animate-fadeIn"
+                    className="h-full bg-teal-500 animate-fadeIn"
                     style={{ width: `${topTasks[0] ? (task.count / topTasks[0].count) * 100 : 0}%`, transition: `width 0.3s ease ${i * 0.1}s` }}
                   />
                 </div>

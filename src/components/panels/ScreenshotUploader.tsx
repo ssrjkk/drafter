@@ -135,8 +135,8 @@ export function ScreenshotUploader({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const borderColor = isDragging ? "#6366f1" : error ? "#ef4444" : "rgba(255,255,255,0.1)";
-  const backgroundColor = isDragging ? "rgba(99, 102, 241, 0.1)" : "rgba(255,255,255,0.02)";
+  const borderColor = isDragging ? "#14b8a6" : error ? "#ef4444" : "rgba(255,255,255,0.1)";
+  const backgroundColor = isDragging ? "rgba(20, 184, 166, 0.1)" : "rgba(255,255,255,0.02)";
 
   return (
     <GlassCard className="p-6">

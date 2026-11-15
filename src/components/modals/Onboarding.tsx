@@ -111,7 +111,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
         <div className="p-8 pb-4">
           <div className="text-center mb-2">
-            <h2 className="text-xl font-bold bg-gradient-to-r from-purple-800 via-purple-500 to-purple-600 dark:from-white dark:via-purple-200 dark:to-purple-400 bg-clip-text text-transparent">
+            <h2 className="text-xl font-bold text-teal-600 dark:text-teal-300 bg-clip-text text-transparent">
               {t('onboarding.title')}
             </h2>
             <p className="text-sm text-gray-500 mt-1">{t('onboarding.subtitle')}</p>
@@ -149,9 +149,9 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 onClick={() => { setCurrentStep(i); }}
                 className={`w-2 h-2 rounded-full transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
                   i === currentStep
-                    ? 'bg-purple-400 w-6'
+                    ? 'bg-teal-400 w-6'
                     : i < currentStep
-                      ? 'bg-purple-400/40'
+                      ? 'bg-teal-400/40'
                       : 'bg-gray-300 dark:bg-white/10'
                 }`}
                 aria-label={t('onboarding.stepLabel', { step: String(i + 1) })}
