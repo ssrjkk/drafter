@@ -33,6 +33,11 @@ jobs:
           # GitHub Pages project sites are served from /<repo>/
           VITE_BASE: /drafter/
 
+      # The blueprint landing lives outside the vite app (docs/landing/) and
+      # ships next to it at /landing/ without touching the app bundle.
+      - name: Add blueprint landing
+        run: cp -r docs/landing dist/landing
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
