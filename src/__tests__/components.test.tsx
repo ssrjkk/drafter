@@ -55,7 +55,7 @@ describe('RippleButton', () => {
 
   it('applies primary variant by default', () => {
     const { container } = render(<RippleButton>Button</RippleButton>);
-    expect(container.querySelector('button')).toHaveClass('from-indigo-500');
+    expect(container.querySelector('button')).toHaveClass('bg-teal-600');
   });
 
   it('applies secondary variant correctly', () => {
