@@ -363,3 +363,8 @@ MIT License. Copyright (c) 2026 ssrjkk. Подробности в [LICENSE](LICE
 **Создано с заботой для QA-сообщества.**
 
 </div>
+
+## Безопасность
+
+- [Changelog](CHANGELOG.md)
+- [Security](SECURITY.md)
