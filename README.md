@@ -191,7 +191,6 @@ Drafter supports **9 providers** with a unified interface. Pick any — the expe
 | **OpenRouter** | Yes | `deepseek/deepseek-chat` | [openrouter.ai](https://openrouter.ai/keys) |
 | **Together AI** | Yes | `meta-llama/Llama-3.3-70B-Instruct` | [api.together.ai](https://api.together.ai) |
 | **Novita AI** | Yes | `deepseek/deepseek-chat` | [novita.ai](https://novita.ai) |
-| **Lepton AI** | Yes | `llama-3.3-70b-instruct` | [lepton.ai](https://www.lepton.ai) |
 | **Claude** | Paid | `claude-sonnet-4-20250514` | [console.anthropic.com](https://console.anthropic.com) |
 | **OpenAI** | Paid | `gpt-4o-mini` | [platform.openai.com](https://platform.openai.com) |
 

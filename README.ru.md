@@ -185,7 +185,6 @@ Drafter поддерживает **9 провайдеров** с единым и
 | **OpenRouter** | Да | `deepseek/deepseek-chat` | [openrouter.ai](https://openrouter.ai/keys) |
 | **Together AI** | Да | `meta-llama/Llama-3.3-70B-Instruct` | [api.together.ai](https://api.together.ai) |
 | **Novita AI** | Да | `deepseek/deepseek-chat` | [novita.ai](https://novita.ai) |
-| **Lepton AI** | Да | `llama-3.3-70b-instruct` | [lepton.ai](https://www.lepton.ai) |
 | **Claude** | Платно | `claude-sonnet-4-20250514` | [console.anthropic.com](https://console.anthropic.com) |
 | **OpenAI** | Платно | `gpt-4o-mini` | [platform.openai.com](https://platform.openai.com) |
 
