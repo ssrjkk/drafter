@@ -160,7 +160,7 @@ npm run preview   # предпросмотр локально
 
 ### Developer Experience
 
-- **607 тестов** в 48 файлах (unit, integration, property-based)
+- **698 тестов** в 52 файлах (unit, integration, property-based)
 - **49 E2E тестов** в 12 spec-файлах (Playwright)
 - **Lighthouse CI** в GitHub Actions
 - Pre-commit хуки (eslint, lint-staged)
