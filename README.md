@@ -6,10 +6,10 @@
 
 **Generate test plans, analyze code, write bug reports — powered by 9 AI providers.**
 
-[![CI](https://github.com/ssrjkk/drafter/actions/workflows/ci.yml/badge.svg)](https://github.com/ssrjkk/drafter/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-698%20passed-22c55e)](#testing)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](#tech-stack)
+
+
+
+
 
 [Quick Start](#quick-start) | [Features](#features) | [Providers](#ai-providers) | [Deploy](#deploy) | [Contributing](#contributing)
 
