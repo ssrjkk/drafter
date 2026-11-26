@@ -6,10 +6,10 @@
 
 **Генерация тест-планов, анализ кода, написание баг-репортов — на базе 9 AI-провайдеров.**
 
-[![CI](https://github.com/ssrjkk/drafter/actions/workflows/ci.yml/badge.svg)](https://github.com/ssrjkk/drafter/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-607%20passed-22c55e)](#тестирование)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](#технологический-стек)
+
+
+
+
 
 [Быстрый старт](#быстрый-старт) | [Возможности](#возможности) | [Провайдеры](#ai-провайдеры) | [Деплой](#деплой) | [Контрибьюция](#контрибьюция)
 
