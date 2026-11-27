@@ -25,10 +25,6 @@ Live demo: [ssrjkk.github.io/drafter](https://ssrjkk.github.io/drafter/) — the
 
 
 
-## Screenshots
-
-<!-- TODO: Add demo screenshot -->
-
 ## What is Drafter?
 
 A browser-based QA assistant that turns your task descriptions into structured outputs — test plans, test cases, automation code, bug reports, security checks, and more. No server required. Runs entirely in your browser with SQLite (WebAssembly).

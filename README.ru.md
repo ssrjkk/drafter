@@ -246,7 +246,7 @@ src/
 ## Тестирование
 
 ```bash
-npm run test          # 607 unit/integration тестов в 48 файлах
+npm run test          # 698 unit/integration тестов в 52 файлах
 npm run test:watch    # Watch mode
 npm run test:e2e      # 49 Playwright E2E тестов в 12 spec-файлах
 ```
