@@ -259,7 +259,7 @@ npm run test:e2e      # 49 Playwright E2E tests in 12 spec files
 ## Deploy
 
 ### GitHub Pages
-Pushing to `master` triggers `.github/workflows/deploy.yml`, which builds with `VITE_BASE=/drafter/` and publishes to https://ssrjkk.github.io/drafter/.
+Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds with `VITE_BASE=/drafter/` and publishes to https://ssrjkk.github.io/drafter/.
 
 ### Vercel / Netlify
 Push to GitHub, connect repo, auto-deploy. Build command: `npm run build`, output: `dist/`.

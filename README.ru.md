@@ -259,7 +259,7 @@ npm run test:e2e      # 49 Playwright E2E тестов в 12 spec-файлах
 ## Деплой
 
 ### GitHub Pages
-Пуш в `master` запускает `.github/workflows/deploy.yml`, который собирает проект с `VITE_BASE=/drafter/` и публикует на https://ssrjkk.github.io/drafter/.
+Пуш в `main` запускает `.github/workflows/deploy.yml`, который собирает проект с `VITE_BASE=/drafter/` и публикует на https://ssrjkk.github.io/drafter/.
 
 ### Vercel / Netlify
 Пуш в GitHub, подключаешь репо, автодеплой. Build command: `npm run build`, output: `dist/`.
