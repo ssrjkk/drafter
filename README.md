@@ -187,6 +187,7 @@ Drafter supports **9 providers** with a unified interface. Pick any — the expe
 | **OpenRouter** | Yes | `deepseek/deepseek-chat` | [openrouter.ai](https://openrouter.ai/keys) |
 | **Together AI** | Yes | `meta-llama/Llama-3.3-70B-Instruct` | [api.together.ai](https://api.together.ai) |
 | **Novita AI** | Yes | `deepseek/deepseek-chat` | [novita.ai](https://novita.ai) |
+| **Lepton AI** | Yes | `llama-3.3-70b-instruct` | [Lepton AI docs](https://www.lepton.ai/docs) |
 | **Claude** | Paid | `claude-sonnet-4-20250514` | [console.anthropic.com](https://console.anthropic.com) |
 | **OpenAI** | Paid | `gpt-4o-mini` | [platform.openai.com](https://platform.openai.com) |
 
@@ -285,14 +286,14 @@ npm run build
 
 | Layer | Technology |
 |-------|-----------|
-| UI | React 18.3, TypeScript 5.7, TailwindCSS 4.3 |
+| UI | React 19.3, TypeScript 5.7, TailwindCSS 4.3 |
 | State | Zustand 5 + immer |
-| Database | sql.js 1.10 (SQLite WASM) + IndexedDB |
+| Database | sql.js 1.15 (SQLite WASM) + IndexedDB |
 | PDF | jsPDF 4 |
 | Archive | JSZip |
 | Virtualization | @tanstack/react-virtual |
 | Testing | Vitest, Playwright, @testing-library |
-| Build | Vite 5, esbuild |
+| Build | Vite 8.3, esbuild |
 | CI | GitHub Actions (typecheck, lint, test, build, E2E, Lighthouse, Docker) |
 | Quality | ESLint 9, Commitlint, Husky, lint-staged |
 
