@@ -24,13 +24,13 @@
     "lint-staged": "lint-staged"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "^3.14.26",
-    "immer": "^11.2.9",
+    "@tanstack/react-virtual": "^3.14.28",
+    "immer": "^11.2.10",
     "jspdf": "^4.2.1",
     "jszip": "^3.10.2",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "sql.js": "^1.15.2",
+    "sql.js": "^1.17.0",
     "zustand": "^5.1.0"
   },
   "devDependencies": {
